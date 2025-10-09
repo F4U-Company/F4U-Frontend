@@ -1,0 +1,38 @@
+:root{
+  --bg:#f4f7fb;
+  --card:#ffffff;
+  --accent:#1e88ff;
+  --muted:#6b7280;
+  --danger:#ef4444;
+  --shadow: 0 6px 18px rgba(20,20,40,0.06);
+  --radius:12px;
+}
+
+*{box-sizing:border-box;font-family:Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial}
+
+body{margin:0;background:var(--bg);color:#111}
+.header{padding:28px 24px;text-align:center}
+.header h1{margin:0;font-size:28px}
+.muted{color:var(--muted);margin-top:6px}
+
+.container{display:flex;gap:20px;padding:20px;max-width:1100px;margin:0 auto}
+.left{flex:0 0 360px}
+.right{flex:1}
+
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;margin-bottom:16px}
+.form input, .form select{width:100%;padding:10px;border-radius:8px;border:1px solid #e6e9ef;margin-bottom:8px}
+.row{display:flex;gap:8px}
+.row input{flex:1}
+.btn{background:var(--accent);color:#fff;padding:10px 14px;border-radius:8px;border:none;cursor:pointer}
+.btn.small{padding:6px 10px;font-size:13px}
+.btn.danger{background:var(--danger)}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.flights-table{width:100%;border-collapse:collapse}
+.flights-table th,.flights-table td{padding:8px 10px;border-bottom:1px solid #f0f2f6;text-align:left;font-size:14px}
+.footer{padding:16px;text-align:center;color:var(--muted);font-size:13px}
+
+/* responsive */
+@media (max-width:900px){
+  .container{flex-direction:column;padding:12px}
+  .left{width:100%}
+}
