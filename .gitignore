@@ -1,0 +1,42 @@
+# Node
+node_modules/
+npm-debug.log*
+package-lock.json
+
+# Build output
+dist/
+build/
+.vite/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDEs/editors
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# logs
+logs/
+*.log
+
+# mac / linux temp
+*.swp
+*~
+
+# Three/GLB / public assets
+# Si tus modelos GLB o HDR están en public/models y quieres subirlos, NO ignores public/
+# Si son muy grandes (>100MB) usa Git LFS (ver instrucciones abajo).
+# Si quieres excluir modelos para usarlos vía CDN, entonces descomenta:
+# public/models/*.hdr
+# public/models/*.glb
+
+# Git LFS attributes:
+.gitattributes

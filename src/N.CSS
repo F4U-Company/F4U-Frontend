@@ -1,0 +1,458 @@
+:root{
+  --bg: #f3f7fb;
+  --card: #ffffff;
+  --muted: #6b7280;
+  --accent: #0ea5a4;
+  --accent-600: #059669;
+  --shadow: 0 10px 30px rgba(2,6,23,0.08);
+  --glass: rgba(255,255,255,0.7);
+  --card-radius: 12px;
+
+  /* alturas y tamaños */
+  --map-height: 220px;
+  --viewer-height: 220px;
+  --seats-height: 180px;
+  --shell-padding: 10px;
+
+  /* anchos interiores (contenido dentro de cada tarjeta) */
+  --inner-width-map: 88%;
+  --inner-width-viewer: 84%;
+}
+
+/* Box model */
+* { box-sizing: border-box; }
+html,body,#root { height: 100%; margin:0; padding:0; }
+
+/* Body */
+body {
+  margin: 0;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background: linear-gradient(180deg,#f7fbfe 0%, #eef6fb 70%);
+  color: #0b1220;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* App shell */
+.app-shell { width: 100%; margin: 0 auto; padding: 0 var(--shell-padding); }
+
+/* Header */
+.app-header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px; }
+.brand { display:flex; gap:12px; align-items:center; }
+.brand-logo { width:56px; height:56px; border-radius:10px; background: linear-gradient(135deg,#0ea5a4,#059669); display:flex; align-items:center; justify-content:center; color:white; font-weight:800; box-shadow: 0 6px 18px rgba(5,118,103,0.18); font-size:22px; }
+.brand-title { margin:0; font-size:18px; }
+.brand-sub { font-size:12px; color:var(--muted); }
+.header-cta { display:flex; gap:8px; align-items:center; }
+.btn-ghost { background:transparent; border:none; padding:8px 12px; color:var(--muted); border-radius:8px; cursor:pointer; }
+.btn-primary { background:var(--accent); color:white; border:none; padding:8px 14px; border-radius:10px; cursor:pointer; font-weight:700; box-shadow:var(--shadow); }
+
+/* Carousel */
+.carousel { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px; }
+.carousel-card { width:100%; border-radius: 14px; padding: 22px 18px; color: white; box-shadow: var(--shadow); display:flex; align-items:center; justify-content:center; }
+.carousel-content { text-align:center; }
+.carousel-content .emoji { font-size:28px; margin-bottom:6px; }
+.carousel-dots { display:flex; gap:8px; margin-left:12px; align-items:center; }
+.dot { width:10px; height:10px; border-radius:50%; background: rgba(255,255,255,0.35); border:none; cursor:pointer; }
+.dot.active { background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
+
+/* GRID: ahora 12 columnas para centrar mejor los dos cuadros pequeños */
+.main-content { display:flex; flex-direction:column; gap:18px; }
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr); /* uso 12 columnas */
+  grid-template-rows: auto auto auto;
+  grid-template-areas:
+    "controls controls controls controls controls controls controls controls controls controls controls controls"
+    "map map map map map viewer viewer viewer viewer viewer viewer viewer"
+    "seats seats seats seats seats seats seats seats seats seats seats seats";
+  gap: 18px;
+  max-width: 1120px;
+  margin: 0 auto;
+  align-items: start;
+}
+
+/* Force .controls full width */
+.grid-area-controls { grid-area: controls; grid-column: 1 / -1; }
+
+/* Colocación centrada de los dos cuadros:
+   - map ocupará columnas 3..8  (5 columnas centradas a la izquierda)
+   - viewer ocupará columnas 8..12 (4 columnas a la derecha, juntas en el centro)
+   Ajusta los números si quieres más/menos separación lateral.
+*/
+.grid-area-map { grid-area: map; grid-column: 3 / 8; }
+.grid-area-viewer { grid-area: viewer; grid-column: 8 / 12; }
+
+/* seats ocupa todo */
+.grid-area-seats { grid-area: seats; grid-column: 1 / -1; }
+
+/* Card base */
+.card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.96), var(--card));
+  padding: 16px;
+  border-radius: var(--card-radius);
+  box-shadow: var(--shadow);
+  min-height: 0;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* Controls internals */
+.controls-grid-inner { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; align-items:end; }
+.form-group label { display:block; font-size:13px; margin-bottom:6px; color:#0f1724; font-weight:600; }
+.form-select { width:100%; padding:10px 12px; border-radius:10px; border:1px solid #e6eef6; background: linear-gradient(180deg,#fff,#fbfdff); font-size:14px; }
+.form-info { grid-column: span 2; display:flex; flex-direction:column; gap:6px; }
+.badge { display:inline-block; padding:6px 10px; border-radius:999px; font-weight:700; font-size:13px; }
+.badge-ok { background: rgba(6,95,70,0.08); color:#065f46; border:1px solid rgba(6,95,70,0.06); }
+.badge-warn { background: rgba(185,28,28,0.08); color:#b91c1c; border:1px solid rgba(185,28,28,0.06); }
+.muted { color: var(--muted); font-size: 13px; }
+
+/* MAP card (pequeña y centrada dentro de su área) */
+.map-card {
+  padding: 8px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  align-items:center;
+  justify-content:center;
+}
+.map-card h4 { margin: 0; padding: 6px 4px; font-size: 14px; color: #0b1220; }
+
+/* área interior del mapa — tamaño controlado por variable */
+.map-card .map-frame {
+  width: 100%;
+  height: var(--map-height);
+  min-height: var(--map-height);
+  border-radius: 10px;
+  overflow: hidden;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+/* VIEWER card (pequeña y centrada dentro de su área) */
+.viewer-card {
+  padding: 12px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  align-items:center;
+  justify-content:center;
+}
+.viewer-card .viewer-body {
+  width: 100%;
+  height: var(--viewer-height);
+  min-height: var(--viewer-height);
+  overflow: hidden;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+/* Ajuste interior: limitar anchura del contenido dentro de la tarjeta para que queden 'cuadrados' */
+.map-inner { display:flex; align-items:center; justify-content:center; width:100%; height:100%; }
+.map-inner > * { width: var(--inner-width-map); max-width:100%; margin:0 auto; display:block; }
+.viewer-body > * { width: var(--inner-width-viewer); max-width:100%; margin:0 auto; display:block; }
+
+/* Seats (bloque grande debajo) */
+.seats-card {
+  padding: 12px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+
+/* SEAT MAP horizontal (bloques apilados horizontalmente pero con pasillos horizontales) */
+.seat-selector-root.horizontal { display:flex; flex-direction:column; gap:10px; }
+.seat-cabin.horizontal {
+  display:flex;
+  gap:14px;
+  overflow-x:auto;
+  padding:12px;
+  align-items:flex-start;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 10px;
+  background: linear-gradient(180deg,#ffffff,#fbfdff);
+  border: 1px solid #edf2f7;
+  height: var(--seats-height);
+  min-height: var(--seats-height);
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* ROW column (cada 'columna' representa una fila del avión) */
+.row-column {
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  gap: 6px;
+  min-width: 110px;
+  max-width: 140px;
+  padding: 8px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.88);
+  box-shadow: 0 6px 18px rgba(2,6,23,0.04);
+}
+
+/* estructura interna: bloques a la izquierda (stack vertical -> crean pasillos horizontales) + número a la derecha */
+.row-inner { display:flex; flex-direction:row; align-items:center; gap:12px; width:100%; }
+.blocks-left {
+  display:flex;
+  flex-direction:column; /* apilado vertical => pasillos horizontales entre bloques */
+  gap: 10px;
+  align-items:flex-start;
+  width: calc(100% - 56px);
+}
+.seat-block-horizontal {
+  display:flex;
+  flex-direction:row;
+  gap:6px;
+  align-items:center;
+  padding:6px 6px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.98);
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+}
+.blocks-left .seat-block-horizontal + .seat-block-horizontal::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  height: 2px;
+  background: rgba(11,17,32,0.06);
+  top: -8px;
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+/* Asientos compactos */
+.seat {
+  width:30px;
+  height:30px;
+  border-radius:5px;
+  border:1px solid #cbd5e1;
+  background:#f8fafc;
+  display:inline-flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  font-weight:700;
+  color:#0b1220;
+  transition: transform .06s, box-shadow .08s;
+  padding:0;
+}
+.seat:hover { transform: translateY(-2px); box-shadow: 0 6px 14px rgba(2,6,23,0.06); }
+.seat-available { background: #ffffff; border-color: #dbe7f2; }
+.seat-selected { background: linear-gradient(90deg,var(--accent),var(--accent-600)); color:white; border-color: transparent; box-shadow: 0 8px 18px rgba(5,118,103,0.12); }
+.seat-occupied { background:#9ca3af; color:white; border-color:#90959c; cursor:not-allowed; opacity:0.95; }
+
+.seat-letter { font-size:11px; line-height:1; }
+.seat-row-small { font-size:9px; color:var(--muted); line-height:1; }
+
+/* Numero fila a la derecha */
+.row-number-col {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:40px;
+  padding:6px 8px;
+  font-weight:800;
+  color:#0b1220;
+  background: linear-gradient(90deg,#ffffff,#f1fbf9);
+  border-radius:8px;
+  font-size:12px;
+  box-shadow: 0 4px 12px rgba(2,6,23,0.04);
+  text-align:center;
+  margin-left: auto;
+}
+
+/* leyenda, botones, resumen (sin cambios) */
+.seat-legend { display:flex; gap:12px; align-items:center; margin-top:6px; color:var(--muted); font-size:13px; }
+.legend-box { width:14px; height:14px; border-radius:3px; display:inline-block; margin-right:8px; }
+.legend-box.available { background:#fff; border:1px solid #dbe7f2; }
+.legend-box.selected { background: linear-gradient(90deg,var(--accent),var(--accent-600)); }
+.legend-box.occupied { background:#9ca3af; }
+
+.selection-summary { margin-top:12px; display:flex; justify-content:space-between; align-items:center; gap:12px; }
+.selected-label { color:var(--muted); font-size:13px; }
+.selected-value { font-weight:800; font-size:16px; }
+
+.btn-secondary { background: transparent; border: 1px solid #e6edf3; padding: 8px 12px; border-radius: 8px; cursor: pointer; }
+.btn-cta { background: linear-gradient(90deg,var(--accent),var(--accent-600)); color: white; padding: 10px 14px; border-radius: 10px; border: none; font-weight: 800; cursor: pointer; }
+.btn-cta:disabled { opacity:0.5; cursor:not-allowed; box-shadow:none; }
+
+/* Protecciones media/overflow */
+img, iframe { max-width: 100%; height: auto; display: block; }
+svg { max-width: 100%; height: auto; display: block; }
+.controls-card, .map-card, .seats-card, .viewer-card { min-width: 0; }
+
+/* Evitar que regla global rompa canvas del globo */
+.globe-container {
+  position: relative;
+  width: 100%;
+  height: var(--map-height);
+  border-radius: 15px;
+  overflow: hidden;
+  background-color: #000;
+}
+.globe-container canvas {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+  object-fit: initial !important;
+}
+
+/* Responsive */
+@media (max-width: 980px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "controls"
+      "map"
+      "viewer"
+      "seats";
+  }
+  :root {
+    --map-height: 220px;
+    --viewer-height: 220px;
+    --seats-height: 160px;
+    --inner-width-map: 100%;
+    --inner-width-viewer: 100%;
+  }
+  .row-column { min-width: 110px; max-width: 140px; }
+  .seat-cabin.horizontal { padding: 10px; gap:10px; }
+}
+/* ---------- NUEVO PARA 2D---------- */
+
+/* Variables nuevas / ajuste */
+:root {
+  /* altura del mapa 2D (ajústala para que quede igual a "Origen & destino" si lo prefieres) */
+  --map2d-height: 220px;
+}
+
+/* Actualizar grid: fila extra para map2d (controls -> map2d -> map+viewer -> seats) */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  grid-template-rows: auto auto auto auto;
+  grid-template-areas:
+    "controls controls controls controls controls controls controls controls controls controls controls controls"
+    "map2d map2d map2d map2d map2d map2d map2d map2d map2d map2d map2d map2d"
+    "map map map map map viewer viewer viewer viewer viewer viewer viewer"
+    "seats seats seats seats seats seats seats seats seats seats seats seats";
+  gap: 18px;
+  max-width: 1120px;
+  margin: 0 auto;
+  align-items: start;
+}
+
+/* Nueva área map2d */
+.grid-area-map2d { grid-area: map2d; }
+
+/* Card para el mapa 2D */
+.map2d-card {
+  padding: 12px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  align-items:stretch;
+  justify-content:center;
+}
+
+/* Dentro del map2d, forzamos un lienzo blanco y la altura controlada */
+.map2d-card .map-inner {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:100%;
+  height: var(--map2d-height);
+}
+.map2d-card .map-inner > * {
+  width: var(--inner-width-map, 92%);
+  max-width:100%;
+  height: 100%;
+}
+
+/* Aseguramos que el FlightMap2D tenga fondo blanco (si no lo tiene ya) */
+.map2d-card .map2d-container {
+  background: #fff;
+  border-radius: 10px;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  box-shadow: 0 6px 18px rgba(2,6,23,0.04);
+}
+
+/* Mantener el comportamiento responsivo (si ya tienes reglas @media, ajusta según convenga) */
+@media (max-width: 980px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto auto auto;
+    grid-template-areas:
+      "controls"
+      "map2d"
+      "map"
+      "viewer"
+      "seats";
+  }
+  :root {
+    --map2d-height: 220px;
+  }
+  .map2d-card .map-inner > * {
+    width: 100% !important;
+  }
+}
+
+
+.plane-icon-wrapper { pointer-events: none !important; }
+.plane-icon { display: inline-block; transform-origin: center center; /* sin transition; interpolamos en JS */ }
+.plane-icon img { display:block; width:100%; height:100%; pointer-events:none; user-select:none; }
+
+
+
+/* ---------- estilos para pestañas bloqueadas y estética ---------- */
+.tabs { display:flex; gap:12px; align-items:stretch; }
+.tab {
+  flex: 1 1 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.96), var(--card));
+  padding: 12px 14px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(9,10,12,0.03);
+  cursor: pointer;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:6px;
+  transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease;
+  min-width: 180px;
+}
+.tab:hover { transform: translateY(-4px); box-shadow: 0 12px 28px rgba(2,6,23,0.08); }
+.tab.active { border-color: rgba(14,165,132,0.12); box-shadow: 0 16px 35px rgba(3,105,92,0.08); transform: translateY(-6px); }
+.tab .tab-title { font-weight:800; color:#0b1220; font-size:14px; }
+.tab .tab-meta { color:var(--muted); font-size:12px; display:flex; gap:8px; align-items:center; }
+.tab-lock { opacity:0.92; margin-left:6px; font-size:13px; }
+.tab-check { color: #059669; font-weight:800; margin-left:6px; }
+
+/* locked state */
+.tab.locked { opacity: 0.6; pointer-events: auto; /* allow click to guide user */ }
+.tab.locked:hover { transform: none; box-shadow: none; cursor: pointer; }
+
+/* mensaje pequeño para guiar (cuando clic en lock se enfoca el campo) */
+.controls-card .form-select:focus { outline: 2px solid rgba(6,95,70,0.12); box-shadow: 0 6px 18px rgba(6,95,70,0.06); }
+
+/* responsive: pestañas en columna en pantallas estrechas */
+@media (max-width: 720px) {
+  .tabs { flex-direction: column; gap: 10px; }
+  .tab { min-width: 0; }
+}

@@ -1,0 +1,889 @@
+/* =========================================================
+   index.css (versión optimizada y comentada)
+   Contiene únicamente las reglas utilizadas por App.jsx
+   ========================================================= */
+
+/* -----------------------
+   Variables globales
+   ----------------------- */
+:root{
+  --bg: #f3f7fb;
+  --card: #ffffff;
+  --muted: #6b7280;
+  --accent: #0ea5a4;
+  --accent-600: #059669;
+  --shadow: 0 10px 30px rgba(2,6,23,0.08);
+  --card-radius: 12px;
+
+  /* Control de tamaños globales — ajusta para modificar layout */
+  --map2d-height: 260px;     /* coincide con height prop pasado a FlightMap2D */
+  --inner-width-map: 88%; 
+    --seat-width: 44px;   /* ancho visible del asiento (antes 30px) */
+  --seat-height: 34px;  /* alto del asiento (antes 30px) */
+  --seat-gap: 8px;      /* separación entre asientos dentro del bloque */
+  --row-column-min: 130px; /* ancho mínimo de cada columna/fila */
+  --row-column-max: 170px   /* ancho interior usado por .map-inner y .controls-inner */
+}
+
+/* -----------------------
+   Reset / box model
+   ----------------------- */
+* { box-sizing: border-box; }
+html,body,#root { height: 100%; margin: 0; padding: 0; }
+body {
+  margin: 0;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background: linear-gradient(180deg,#f7fbfe 0%, #eef6fb 70%);
+  color: #0b1220;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* -----------------------
+   App shell / Header
+   ----------------------- */
+.app-shell { width: 100%; margin: 0 auto; padding: 0 10px; }
+.app-header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px; }
+.brand { display:flex; gap:12px; align-items:center; }
+.brand-logo { width:56px; height:56px; border-radius:10px; background: linear-gradient(135deg,#0ea5a4,#059669); display:flex; align-items:center; justify-content:center; color:white; font-weight:800; box-shadow: 0 6px 18px rgba(5,118,103,0.18); font-size:22px; }
+.brand-title { margin:0; font-size:18px; }
+.brand-sub { font-size:12px; color:var(--muted); }
+.header-cta { display:flex; gap:8px; align-items:center; }
+
+/* Botones primarios / secundarios usados en la App */
+.btn-ghost { background:transparent; border:none; padding:8px 12px; color:var(--muted); border-radius:8px; cursor:pointer; }
+.btn-primary { background:var(--accent); color:white; border:none; padding:8px 14px; border-radius:10px; cursor:pointer; font-weight:700; box-shadow:var(--shadow); }
+.btn-secondary { background: transparent; border: 1px solid #e6edf3; padding: 8px 12px; border-radius: 8px; cursor: pointer; }
+.btn-cta { background: linear-gradient(90deg,var(--accent),var(--accent-600)); color: white; padding: 10px 14px; border-radius: 10px; border: none; font-weight: 800; cursor: pointer; }
+.btn-cta:disabled { opacity:0.5; cursor:not-allowed; box-shadow:none; }
+
+/* === Centrado perfecto del carrusel (mantiene dimensiones internas) === */
+.carousel {
+  width: 100%;
+  max-width: 1120px;    /* mismo ancho usado en tabs y contenido central */
+  margin: 0 auto 18px;  /* centra horizontalmente el bloque */
+  padding: 0 8px;       /* mismo padding lateral que las pestañas */
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  /* no usamos justify-content:center porque queremos que la tarjeta ocupe el
+     espacio disponible mientras las dots se mantienen a la derecha sin desbordar */
+}
+
+/* Permite que la tarjeta ocupe el espacio disponible dentro del contenedor
+   sin forzar un desbordamiento que cambie los márgenes visuales. */
+.carousel-card {
+  flex: 1 1 0;     /* crecer/encoger para llenar el contenedor */
+  min-width: 0;    /* evita que contenido interno (texto) fuerce overflow */
+  border-radius: 28px;
+  padding: 22px 18px;
+  color: white;
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;     /* sobreescribe width:100% si existiera */
+}
+
+/* Mantener las dots a la derecha de la tarjeta sin afectar el centrado global */
+.carousel-dots {
+  flex: 0 0 auto;  /* tamaño fijo según su contenido */
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-left: 6px; /* separación extra opcional */
+}
+/* ================================
+   Forzar controles del carrusel
+   dentro del .carousel-card (bottom-right)
+   ================================ */
+
+/* Aseguramos contenedores posicionables */
+.carousel { position: relative; }          /* contenedor externo */
+.carousel-card { position: relative; overflow: visible; } /* contendrá los controles */
+
+/* Dots: colocarlos dentro del card, esquina inferior derecha */
+.carousel-dots {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  display: flex;
+  gap: 8px;
+  z-index: 30;
+  margin: 0;            /* eliminar márgenes externos que empujen fuera */
+  padding: 0;
+}
+
+/* Controles prev/next (varias librerías comunes)
+   Se colocan en la misma esquina: next a right:12px, prev a la izquierda de next */
+.carousel .carousel-prev,
+.carousel .carousel-next,
+.carousel .slick-prev,
+.carousel .slick-next,
+.carousel .swiper-button-prev,
+.carousel .swiper-button-next,
+.carousel .glide__arrow--prev,
+.carousel .glide__arrow--next,
+.carousel .flickity-button.previous,
+.carousel .flickity-button.next,
+.carousel .carousel-control,
+.carousel .carousel-nav,
+.carousel .carousel-button {
+  position: absolute;
+  bottom: 12px;
+  z-index: 35;
+  /* apariencia mínima para que se vean bien si tu botón no tiene estilos */
+  background: rgba(255,255,255,0.06);
+  border: none;
+  padding: 8px;
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Next (derecha) */
+.carousel .carousel-next,
+.carousel .slick-next,
+.carousel .swiper-button-next,
+.carousel .glide__arrow--next,
+.carousel .flickity-button.next,
+.carousel .carousel-button.next {
+  right: 12px;
+}
+
+/* Prev (a la izquierda del next, ajusta separación si quieres) */
+.carousel .carousel-prev,
+.carousel .slick-prev,
+.carousel .swiper-button-prev,
+.carousel .glide__arrow--prev,
+.carousel .flickity-button.previous,
+.carousel .carousel-button.prev {
+  right: 56px; /* 12px (margen) + ~32px (ancho del botón) + 12px separación */
+}
+
+/* Si tu botón tiene icono SVG muy grande, reduce el espacio con: */
+.carousel .carousel-prev svg,
+.carousel .carousel-next svg,
+.carousel .slick-prev svg,
+.carousel .slick-next svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* En móvil: mover controles debajo de la tarjeta para dar más espacio */
+@media (max-width: 720px) {
+  .carousel { flex-direction: column; gap: 12px; }
+  .carousel-card { width: 100%; }
+  .carousel-dots,
+  .carousel .carousel-prev,
+  .carousel .carousel-next,
+  .carousel .slick-prev,
+  .carousel .slick-next,
+  .carousel .swiper-button-prev,
+  .carousel .swiper-button-next,
+  .carousel .glide__arrow--prev,
+  .carousel .glide__arrow--next,
+  .carousel .flickity-button.previous,
+  .carousel .flickity-button.next,
+  .carousel .carousel-button {
+    position: static;
+    right: auto;
+    bottom: auto;
+    margin: 0 auto;
+  }
+  /* centrar dots cuando son estáticos */
+  .carousel-dots { justify-content: center; }
+}
+
+
+
+/* -----------------------
+   Tabs (barra superior con bloqueo en cascada)
+   - .tab.locked mantiene clic (para guiar) pero visualmente desactivada
+   ----------------------- */
+.tabs { display:flex; gap:12px; align-items:stretch; max-width:1120px; margin:0 auto 18px; padding: 0 8px; }
+.tab {
+  flex: 1 1 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.96), var(--card));
+  padding: 12px 14px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(9,10,12,0.03);
+  cursor: pointer;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:6px;
+  transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease;
+  min-width: 160px;
+}
+.tab:hover { transform: translateY(-4px); box-shadow: 0 12px 28px rgba(2,6,23,0.08); }
+.tab.active { border-color: rgba(14,165,132,0.12); box-shadow: 0 16px 35px rgba(3,105,92,0.08); transform: translateY(-6px); }
+.tab .tab-title { font-weight:800; color:#0b1220; font-size:14px; }
+.tab .tab-meta { color:var(--muted); font-size:12px; display:flex; gap:8px; align-items:center; }
+.tab-lock { opacity:0.92; margin-left:6px; font-size:13px; }
+.tab-check { color: #059669; font-weight:800; margin-left:6px; }
+
+/* locked state: permitimos el click para guiar al usuario, pero bajamos opacidad */
+.tab.locked { opacity: 0.62; }
+@media (max-width: 720px) {
+  .tabs { flex-direction: column; gap: 10px; }
+  .tab { min-width: 0; }
+}
+
+/* -----------------------
+   Cards base y utilidades
+   ----------------------- */
+.card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.96), var(--card));
+  padding: 16px;
+  border-radius: var(--card-radius);
+  box-shadow: var(--shadow);
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* pequeños utilitarios */
+.muted { color: var(--muted); font-size: 13px; }
+.badge { display:inline-block; padding:6px 10px; border-radius:999px; font-weight:700; font-size:13px; }
+.badge-ok { background: rgba(6,95,70,0.08); color:#065f46; border:1px solid rgba(6,95,70,0.06); }
+.badge-warn { background: rgba(185,28,28,0.08); color:#b91c1c; border:1px solid rgba(185,28,28,0.06); }
+
+/* -----------------------
+   CONTROLS: Origen & Destino
+   - .controls-inner: ocupa mismo ancho interno que el mapa y la misma altura minima
+   ----------------------- */
+.controls-card { display:flex; justify-content:center; align-items:center; padding:12px; }
+.controls-inner {
+  width: var(--inner-width-map);
+  max-width: 100%;
+  min-height: var(--map2d-height); /* garantiza altura mínima igual al mapa 2D */
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  align-items: end;
+  padding: 18px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.98), #ffffff);
+  box-shadow: 0 8px 22px rgba(2,6,23,0.04);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+@media (max-width: 980px) {
+  .controls-inner { width: 100%; grid-template-columns: 1fr; min-height: auto; padding:12px; }
+}
+
+/* Form internals */
+.controls-grid-inner { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; align-items:end; width:100%; }
+.form-group label { display:block; font-size:13px; margin-bottom:6px; color:#0f1724; font-weight:600; }
+.form-select { width:100%; padding:10px 12px; border-radius:10px; border:1px solid #e6eef6; background: linear-gradient(180deg,#fff,#fbfdff); font-size:14px; }
+.form-info { grid-column: span 2; display:flex; flex-direction:column; gap:6px; }
+
+/* -----------------------
+   MAP 2D card + mapa interior
+   - .map-inner se usa también para dar el mismo ancho a controles
+   ----------------------- */
+.map2d-card { padding: 12px; display:flex; flex-direction:column; gap:8px; align-items:stretch; justify-content:center; }
+.map-inner { display:flex; align-items:center; justify-content:center; width:100%; height:100%; }
+.map-inner > * { width: var(--inner-width-map); max-width:100%; margin:0 auto; display:block; }
+
+/* FlightMap2D container style (asegura fondo blanco y borde redondeado) */
+.map2d-card .map2d-container { background: #fff; border-radius: 10px; width: 100%; height: var(--map2d-height); overflow: hidden; box-shadow: 0 6px 18px rgba(2,6,23,0.04); }
+
+/* Mapa de recorrido y viewer (lado derecho) */
+.map-card { padding: 8px; display:flex; flex-direction:column; gap:8px; align-items:center; justify-content:center; }
+.viewer-card { padding: 12px; display:flex; flex-direction:column; gap:8px; align-items:center; justify-content:center; }
+.viewer-body { width: 100%; height: var(--viewer-height, 220px); min-height: 220px; display:flex; align-items:center; justify-content:center; }
+
+/* -----------------------
+   Globe / avión icon helpers (FlightMap + FlightMap2D)
+   - Mantener para rotación/evitar pointer events
+   ----------------------- */
+/* ==========================
+   ESTILOS DEL GLOBO (solo)
+   ==========================
+   Pegar esto en tu CSS principal. Son únicamente las reglas
+   que afectan al contenedor del globe y al canvas interno,
+   además del wrapper del icono del avión.
+*/
+
+/* altura base usada por el globo (ajústala si quieres) */
+:root {
+  /* Mantén coherencia con el resto del layout (ej: --map2d-height / --map-height) */
+  --map-height: 220px;
+}
+
+/* Contenedor del globo: caja, recorte y fondo */
+.globe-container {
+  position: relative;
+  width: 100%;
+  height: var(--map-height);    /* altura visible del globo */
+  border-radius: 12px;         /* redondeo del contenedor */
+  overflow: hidden;            /* recorta canvas sobrante */
+  background-color: #000;      /* fondo mientras carga/textura */
+}
+
+/* Canvas del renderer: forzarlo a cubrir exactamente el contenedor.
+   IMPORTANTE: no usar object-fit: cover; el renderer debe hacer setSize().
+   Mantener position:absolute y width/height:100% evita desplazamientos. */
+.globe-container canvas {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;   /* CSS box */
+  height: 100% !important;  /* CSS box */
+  display: block !important;
+}
+
+/* Wrapper y estilos mínimos para el icono del avión (L.divIcon dentro de leaflet) */
+.plane-icon-wrapper { pointer-events: none !important; }
+.plane-icon {
+  display: inline-block;
+  transform-origin: center center; /* rotación aplicada desde JS */
+}
+.plane-icon img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  user-select: none;
+}
+
+
+/* icono del avión (dentro de L.divIcon) */
+.plane-icon-wrapper { pointer-events: none !important; }
+.plane-icon { display: inline-block; transform-origin: center center; }
+.plane-icon img { display:block; width:100%; height:100%; pointer-events:none; user-select:none; }
+
+/* -----------------------
+   Asientos: vista general y leyenda (mínimo necesario)
+   - Asumo que SeatSelector maneja internals; aquí están estilos globales visibles
+   ----------------------- */
+.seats-card { padding: 12px; display:flex; flex-direction:column; gap:12px; }
+.seat-legend { display:flex; gap:12px; align-items:center; margin-top:6px; color:var(--muted); font-size:13px; }
+.legend-box { width:14px; height:14px; border-radius:3px; display:inline-block; margin-right:8px; }
+.legend-box.available { background:#fff; border:1px solid #dbe7f2; }
+.legend-box.selected { background: linear-gradient(90deg,var(--accent),var(--accent-600)); }
+.legend-box.occupied { background:#9ca3af; }
+
+/* -----------------------
+   Selection summary (pie)
+   ----------------------- */
+.selection-summary { margin-top:12px; display:flex; justify-content:space-between; align-items:center; gap:12px; max-width:1120px; margin-left:auto; margin-right:auto; }
+.selected-label { color:var(--muted); font-size:13px; }
+.selected-value { font-weight:800; font-size:16px; }
+
+/* -----------------------
+   Focus helpers (accesibilidad/UX)
+   ----------------------- */
+.controls-card .form-select:focus { outline: 2px solid rgba(6,95,70,0.12); box-shadow: 0 6px 18px rgba(6,95,70,0.06); }
+
+/* -----------------------
+   Responsive tweaks
+   ----------------------- */
+@media (max-width: 980px) {
+  :root { --inner-width-map: 100%; --map2d-height: 220px; }
+  .controls-inner { padding: 12px; }
+  .map2d-card .map2d-container { height: var(--map2d-height); }
+}
+/* ===============================
+   ESTILOS DE LOS ASIENTOS (Seat Map)
+   (versión ampliada — asientos un poco más grandes)
+   =============================== */
+
+/* --- Variables globales para ajustar tamaños --- */
+:root{
+  --seat-width: 52px;        /* ancho del asiento (antes 44px) */
+  --seat-height: 40px;       /* alto del asiento (antes 34px) */
+  --seat-gap: 10px;          /* separación entre asientos */
+  --row-column-min: 150px;   /* ancho mínimo de cada columna/fila */
+  --row-column-max: 190px;   /* ancho máximo de cada columna/fila */
+  --seats-height: 240px;     /* altura del área visible */
+}
+
+/* Contenedor principal del bloque de asientos */
+.seats-card {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Selector horizontal */
+.seat-selector-root.horizontal {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Cabina horizontal con scroll */
+.seat-cabin.horizontal {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding: 12px;
+  align-items: flex-start;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #ffffff, #fbfdff);
+  border: 1px solid #edf2f7;
+  height: var(--seats-height);
+  min-height: var(--seats-height);
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* Cada columna (fila del avión) */
+.row-column {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  min-width: var(--row-column-min);
+  max-width: var(--row-column-max);
+  padding: 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 8px 20px rgba(2, 6, 23, 0.04);
+  box-sizing: border-box;
+}
+
+/* Bloques de asientos */
+.seat-block-horizontal {
+  display: flex;
+  flex-direction: row;
+  gap: var(--seat-gap);
+  align-items: center;
+  padding: 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.98);
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Línea divisoria entre bloques */
+.blocks-left .seat-block-horizontal + .seat-block-horizontal::before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  height: 2px;
+  background: rgba(11, 17, 32, 0.06);
+  top: -8px;
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+/* Cada asiento individual (más grande y centrado) */
+.seat {
+  width: var(--seat-width);
+  height: var(--seat-height);
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-weight: 700;
+  color: #0b1220;
+  transition: transform 0.06s, box-shadow 0.08s;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.seat:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(2, 6, 23, 0.06);
+}
+
+/* Estados */
+.seat-available {
+  background: #ffffff;
+  border-color: #dbe7f2;
+}
+.seat-selected {
+  background: linear-gradient(90deg, var(--accent), var(--accent-600));
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 8px 18px rgba(5, 118, 103, 0.12);
+}
+.seat-occupied {
+  background: #9ca3af;
+  color: white;
+  border-color: #90959c;
+  cursor: not-allowed;
+  opacity: 0.95;
+}
+
+/* Letras dentro del asiento */
+.seat-letter {
+  font-size: 13px;
+  line-height: 1;
+}
+.seat-row-small {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1;
+}
+
+/* Número de fila */
+.row-number-col {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  padding: 6px 10px;
+  font-weight: 800;
+  color: #0b1220;
+  background: linear-gradient(90deg, #ffffff, #f1fbf9);
+  border-radius: 8px;
+  font-size: 13px;
+  box-shadow: 0 4px 12px rgba(2, 6, 23, 0.04);
+  text-align: center;
+  margin-left: auto;
+}
+
+/* Leyenda debajo del mapa */
+.seat-legend {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.legend-box {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  display: inline-block;
+  margin-right: 8px;
+}
+.legend-box.available {
+  background: #fff;
+  border: 1px solid #dbe7f2;
+}
+.legend-box.selected {
+  background: linear-gradient(90deg, var(--accent), var(--accent-600));
+}
+.legend-box.occupied {
+  background: #9ca3af;
+}
+
+/* Resumen inferior */
+.selection-summary {
+  margin-top: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.selected-label {
+  color: var(--muted);
+  font-size: 13px;
+}
+.selected-value {
+  font-weight: 800;
+  font-size: 16px;
+}
+
+/* Botones */
+.btn-secondary {
+  background: transparent;
+  border: 1px solid #e6edf3;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.btn-cta {
+  background: linear-gradient(90deg, var(--accent), var(--accent-600));
+  color: white;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: none;
+  font-weight: 800;
+  cursor: pointer;
+}
+.btn-cta:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Responsividad */
+@media (max-width: 980px) {
+  :root {
+    --seat-width: 44px;
+    --seat-height: 34px;
+    --seat-gap: 8px;
+    --row-column-min: 130px;
+    --row-column-max: 160px;
+  }
+}
+
+/* Botones debajo del selector */
+.btn-secondary {
+  background: transparent;
+  border: 1px solid #e6edf3;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.btn-cta {
+  background: linear-gradient(90deg, var(--accent), var(--accent-600));
+  color: white;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: none;
+  font-weight: 800;
+  cursor: pointer;
+}
+.btn-cta:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Responsividad */
+@media (max-width: 980px) {
+  .row-column {
+    min-width: 110px;
+    max-width: 140px;
+  }
+  .seat-cabin.horizontal {
+    padding: 10px;
+    gap: 10px;
+  }
+}
+
+/* ============================
+   ESTILOS MEJORADOS: Origen & Destino (inputs, date/time, checkbox, errores)
+   Pegar al final de index.css (sobrescribe reglas anteriores si es necesario)
+   ============================ */
+
+/* Variables específicas para el form (ajústalas) */
+:root {
+  --input-height: 44px;
+  --input-radius: 12px;
+  --input-bg: linear-gradient(180deg,#ffffff,#fbfdff);
+  --input-border: 1px solid rgba(14,20,30,0.06);
+  --input-focus: rgba(14,165,132,0.12);
+  --input-shadow: 0 6px 16px rgba(2,6,23,0.04);
+  --muted-2: #7b8794;
+}
+
+/* Contenedor: un poco más aireado */
+.controls-inner {
+  padding: 20px;
+  gap: 16px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.99), #ffffff);
+  box-shadow: 0 14px 40px rgba(11,17,32,0.04);
+}
+
+/* Grid interno: más separación vertical para inputs y mejor alineado */
+.controls-grid-inner {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px 18px;
+  align-items: start;
+  width: 100%;
+}
+
+/* Form groups con espacio y label pequeño */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.form-group label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f1724;
+}
+
+/* Inputs base (text, date, time, select) */
+.form-input,
+.form-select {
+  height: var(--input-height);
+  padding: 10px 14px;
+  border-radius: var(--input-radius);
+  background: var(--input-bg);
+  border: var(--input-border);
+  box-shadow: var(--input-shadow);
+  font-size: 14px;
+  color: #051026;
+  outline: none;
+  transition: box-shadow .16s ease, border-color .12s ease, transform .08s ease;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Select: añadir caret más discreto (no reemplazamos icono nativo) */
+.form-select {
+  background-image: linear-gradient(45deg, transparent 50%, rgba(9, 10, 12, 0.06) 50%),
+                    linear-gradient(135deg, rgba(9, 10, 12, 0.06) 50%, transparent 50%);
+  background-position: calc(100% - 18px) calc(1em + 2px), calc(100% - 13px) calc(1em + 2px);
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  padding-right: 36px;
+}
+
+/* Focus states */
+.form-input:focus,
+.form-select:focus {
+  border-color: transparent;
+  box-shadow: 0 10px 30px var(--input-focus);
+  transform: translateY(-2px);
+}
+
+/* Date/time inputs: mantener misma altura y centrado */
+.form-input[type="date"],
+.form-input[type="time"] {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Checkbox personalizado (más grande, limpio) */
+input[type="checkbox"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  border: 1px solid rgba(11,17,32,0.08);
+  background: white;
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background .12s, transform .08s;
+  box-shadow: 0 4px 12px rgba(2,6,23,0.04);
+}
+input[type="checkbox"]:checked {
+  background: linear-gradient(90deg,var(--accent),var(--accent-600));
+  border-color: transparent;
+  transform: translateY(-2px);
+}
+input[type="checkbox"]::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  display: block;
+  border-radius: 2px;
+  transform: scale(0);
+  transition: transform .12s ease;
+}
+input[type="checkbox"]:checked::after {
+  transform: scale(1);
+  background: rgba(255,255,255,0.95);
+}
+
+/* Checkbox label alineado */
+.controls-grid-inner > div > input[type="checkbox"] + label {
+  margin-left: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f1724;
+}
+
+/* Disabled style (para campos de regreso cuando no hay roundTrip) */
+.form-input[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+  filter: saturate(0.95);
+}
+
+/* Mensaje de error / alerta (más destacado) */
+.form-info .badge-warn {
+  background: linear-gradient(90deg,#fee2e2,#fff1f2);
+  color: #991b1b;
+  border: 1px solid rgba(185,28,28,0.08);
+  padding: 10px 14px;
+  border-radius: 10px;
+  display: inline-block;
+  box-shadow: 0 6px 18px rgba(185,28,28,0.03);
+  width: 100%;
+  text-align: left;
+}
+
+/* Detalle adicional en rojo si la fecha de regreso es anterior */
+.form-info .muted[style*="color: #b91c1c"] {
+  font-weight: 700;
+}
+
+/* Ayuditas debajo del input en gris discreto */
+.controls-inner .muted {
+  color: var(--muted-2);
+  font-size: 13px;
+}
+
+/* Botones: elevar un poco el CTA y dar borde suave */
+.btn-cta {
+  padding: 10px 16px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(6,95,70,0.10);
+}
+.btn-secondary {
+  border-radius: 12px;
+  padding: 9px 14px;
+}
+
+/* Responsive: en móvil, inputs ocupan 1 columna completa */
+@media (max-width: 980px) {
+  .controls-grid-inner {
+    grid-template-columns: 1fr;
+  }
+  .controls-inner { padding: 14px; }
+}
+
+/* Pequeño tweak para que los pickers se vean bien en Safari/Chrome */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-clear-button {
+  cursor: pointer;
+  opacity: 0.88;
+}
+
+/* Focus visible accesible */
+.form-input:focus-visible, .form-select:focus-visible {
+  outline: 2px solid var(--input-focus);
+  outline-offset: 2px;
+}
+
+/* Estilos para validación visual de campos */
+.form-input.input-invalid,
+.form-select.input-invalid {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 1px #ef4444 !important;
+}
+
+.form-input.input-valid,
+.form-select.input-valid {
+  border-color: #22c55e !important;
+  box-shadow: 0 0 0 1px #22c55e !important;
+}
+
+/* Para campos deshabilitados */
+.form-input:disabled,
+.form-select:disabled {
+  border-color: #e5e7eb !important;
+  box-shadow: none !important;
+  background-color: #f9fafb;
+  color: #6b7280;
+}
+
+/* Estados de focus */
+.form-input:focus,
+.form-select:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #3b82f6;
+}
