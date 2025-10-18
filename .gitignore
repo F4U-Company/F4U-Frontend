@@ -10,8 +10,9 @@ build/
 
 # Environment
 .env
-.env.local
-.env.*.local
+
+# Debug files
+debug-token.js
 
 # OS
 .DS_Store

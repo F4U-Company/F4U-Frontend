@@ -1,5 +1,10 @@
 // src/App.jsx
 import React, { useMemo, useState, useEffect } from "react";
+import { useIsAuthenticated, useMsal } from "@azure/msal-react";
+import { loginRequest } from "./authConfig";
+import ProtectedRoute from "./components/ProtectedRoute";
+import NavBar from "./components/NavBar";
+import AuthTest from "./components/AuthTest"; // Panel de pruebas
 import FlightMap from "./components/FlightMap";
 import FlightMap2D from "./components/FlightMap2D";
 import PlaneViewer from "./components/PlaneViewer";
@@ -32,7 +37,8 @@ const CAROUSEL = [
   { title: "Reserva con estilo", subtitle: "Interfaz simple, experiencia premium", accent: "linear-gradient(135deg,#fb7185,#fb923c)", emoji: "🎟️" },
 ];
 
-export default function App() {
+// Componente principal de la aplicación
+function MainApp() {
   const countryOptions = Object.keys(DATA);
   
   // CAMPOS VACÍOS POR DEFECTO
@@ -494,5 +500,87 @@ export default function App() {
         <div className="muted">Diseño y demo — interfaz frontend</div>
       </footer>
     </div>
+  );
+}
+
+// Componente wrapper con autenticación
+export default function App() {
+  const isAuthenticated = useIsAuthenticated();
+  const { instance, accounts } = useMsal();
+  const [tokenSaved, setTokenSaved] = useState(false);
+
+  useEffect(() => {
+    console.log('📱 App.jsx useEffect ejecutado:', {
+      isAuthenticated,
+      accountsLength: accounts.length,
+      tokenSaved,
+      hasToken: !!sessionStorage.getItem('accessToken'),
+      timestamp: new Date().toLocaleTimeString()
+    });
+
+    // Guardar el token JWT cuando el usuario se autentica
+    const saveAccessToken = async () => {
+      if (accounts.length > 0 && !tokenSaved) {
+        console.log('🔑 App.jsx: Intentando obtener token silenciosamente...');
+        try {
+          const response = await instance.acquireTokenSilent({
+            ...loginRequest,
+            account: accounts[0]
+          });
+          
+          if (response && response.accessToken) {
+            console.log('✅ App.jsx: Token obtenido silenciosamente:', {
+              hasAccessToken: !!response.accessToken,
+              expiresOn: response.expiresOn,
+              account: response.account.username
+            });
+            sessionStorage.setItem('accessToken', response.accessToken);
+            setTokenSaved(true);
+            console.log('✅ Token guardado en useEffect');
+          }
+        } catch (error) {
+          console.error('⚠️ Error al obtener token silenciosamente:', error.message);
+          // Si falla silently, intentar con popup
+          try {
+            console.log('🔑 App.jsx: Intentando con popup...');
+            const popupResponse = await instance.acquireTokenPopup({
+              ...loginRequest,
+              account: accounts[0]
+            });
+            if (popupResponse && popupResponse.accessToken) {
+              console.log('✅ App.jsx: Token obtenido por popup:', {
+                hasAccessToken: !!popupResponse.accessToken,
+                expiresOn: popupResponse.expiresOn,
+                account: popupResponse.account.username
+              });
+              sessionStorage.setItem('accessToken', popupResponse.accessToken);
+              setTokenSaved(true);
+              console.log('✅ Token guardado mediante popup');
+            }
+          } catch (popupError) {
+            console.error('❌ Error al obtener token con popup:', popupError);
+          }
+        }
+      }
+    };
+
+    if (isAuthenticated) {
+      saveAccessToken();
+    }
+  }, [isAuthenticated, accounts, instance, tokenSaved]);
+
+  console.log('🎨 App.jsx Render:', { isAuthenticated, timestamp: new Date().toLocaleTimeString() });
+
+  return (
+    <ProtectedRoute>
+      {/* Agregar NavBar solo cuando está autenticado */}
+      <NavBar />
+      {/* Agregar padding-top para compensar el NavBar fixed */}
+      <div style={{ paddingTop: '70px' }}>
+        <MainApp />
+      </div>
+      {/* Panel de pruebas - solo en desarrollo */}
+      {import.meta.env.DEV && <AuthTest />}
+    </ProtectedRoute>
   );
 }

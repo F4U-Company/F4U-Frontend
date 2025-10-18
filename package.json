@@ -4,17 +4,18 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-  "dev": "vite",
-  "build": "vite build",
-  "preview": "vite preview"
-},
-
-  
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@azure/msal-browser": "^4.25.1",
+    "@azure/msal-react": "^3.0.20",
     "@turf/turf": "^7.2.0",
+    "axios": "^1.12.2",
     "globe.gl": "^2.44.1",
     "leaflet": "^1.9.4",
     "maplibre-gl": "^5.9.0",
@@ -26,5 +27,4 @@
     "@vitejs/plugin-react": "^5.0.4",
     "vite": "^7.1.10"
   }
-  
 }
