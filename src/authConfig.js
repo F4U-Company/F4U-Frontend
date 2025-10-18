@@ -2,7 +2,9 @@
 export const msalConfig = {
   auth: {
     clientId: import.meta.env.VITE_AZURE_CLIENT_ID || "TU_CLIENT_ID_AQUI", // Reemplazar con tu Application (client) ID de Azure
-    authority: `https://login.microsoftonline.com/${import.meta.env.VITE_AZURE_TENANT_ID || "TU_TENANT_ID_AQUI"}`, // Reemplazar con tu Tenant ID
+    // Para multitenant + cuentas personales, usa 'common'
+    // Para solo tu organización, usa el Tenant ID específico
+    authority: import.meta.env.VITE_AZURE_AUTHORITY || `https://login.microsoftonline.com/common`,
     redirectUri: window.location.origin, // URL donde Azure redirige después del login
   },
   cache: {
