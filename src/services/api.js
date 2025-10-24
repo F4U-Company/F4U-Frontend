@@ -129,4 +129,40 @@ export const reservationAPI = {
   cancelReservation: (id) => api.delete(`/api/reservations/${id}`),
 };
 
+// ============ CITY ENDPOINTS ============
+export const cityAPI = {
+  // Obtener todas las ciudades activas
+  getAllCities: () => api.get('/api/cities'),
+  
+  // Obtener ciudades por país
+  getCitiesByCountry: (country) => api.get(`/api/cities/country/${country}`),
+};
+
+// ============ SEAT ENDPOINTS ============
+export const seatAPI = {
+  // Obtener todos los asientos de un vuelo
+  getSeatsByFlight: (flightId) => api.get(`/api/seats/flight/${flightId}`),
+  
+  // Reservar un asiento
+  reserveSeat: (seatId) => api.put(`/api/seats/${seatId}/reserve`),
+  
+  // Liberar un asiento
+  releaseSeat: (seatId) => api.put(`/api/seats/${seatId}/release`),
+};
+
+// ============ SEAT LOCK ENDPOINTS ============
+export const seatLockAPI = {
+  // Bloquear un asiento por 15 minutos
+  lockSeat: (seatId, userId) => api.post('/api/seat-locks/lock', { seatId, userId }),
+  
+  // Liberar el bloqueo de un asiento
+  releaseLock: (seatId) => api.delete(`/api/seat-locks/${seatId}`),
+  
+  // Verificar estado de bloqueo de un asiento
+  checkLockStatus: (seatId) => api.get(`/api/seat-locks/${seatId}/status`),
+  
+  // Obtener información general de bloqueos
+  getLockInfo: () => api.get('/api/seat-locks/info'),
+};
+
 export default api;

@@ -1,3 +1,6 @@
+/* Nueva fuente empresarial para el logo */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap');
+
 @font-face{
   font-family: 'Graphik-Regular';
   src: url('https://cdn.nubank.com.br/fonts/Graphik/variants/Graphik-Regular.woff2') format('woff2');
@@ -8,9 +11,6 @@
   src: url('https://cdn.nubank.com.br/fonts/Graphik/variants/Graphik-Medium.woff2') format('woff2');
   font-weight:600; font-style:normal; font-display:swap;
 }
-
-/* Nueva fuente empresarial para el logo */
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap');
 
 :root{
   --blue: #0066CC;
@@ -71,6 +71,167 @@ body{
   display:flex;
   align-items:center;
   justify-content:space-between;
+}
+
+/* Usuario en el header */
+.header-user {
+  position: relative;
+}
+
+.header-user .user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.header-user .user-info:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.header-user .user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #06b6d4 0%, #7c3aed 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.header-user .user-details {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.header-user .user-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: white;
+  line-height: 1.2;
+}
+
+.header-user .dropdown-icon {
+  transition: transform 0.2s;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.header-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  width: 280px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  z-index: 1001;
+  overflow: hidden;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.header-dropdown-menu .menu-header {
+  padding: 1.25rem;
+  background: linear-gradient(135deg, #06b6d4 0%, #7c3aed 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.header-dropdown-menu .menu-user-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.5rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.header-dropdown-menu .menu-user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.header-dropdown-menu .menu-user-name {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header-dropdown-menu .menu-user-email {
+  font-size: 0.8125rem;
+  opacity: 0.9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header-dropdown-menu .menu-divider {
+  height: 1px;
+  background: #e2e8f0;
+}
+
+.header-dropdown-menu .menu-item {
+  width: 100%;
+  padding: 0.875rem 1.25rem;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9375rem;
+  color: #334155;
+  transition: background-color 0.2s;
+}
+
+.header-dropdown-menu .menu-item:hover {
+  background-color: #f8fafc;
+}
+
+.header-dropdown-menu .menu-item.logout {
+  color: #dc2626;
+}
+
+.header-dropdown-menu .menu-item.logout:hover {
+  background-color: #fee2e2;
+}
+
+.header-dropdown-menu .menu-icon {
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
 }
 
 /* Navegación mejorada - TEXTO BLANCO */
@@ -607,10 +768,50 @@ body{
   margin: 0 auto;
 }
 
+/* Contenedor principal con tabs a la izquierda */
+.tabs-layout-container {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
 /* Pestañas de navegación */
 .tabs-shell {
   margin: 0 auto 40px;
   padding: 0 8px;
+}
+
+/* Pestañas verticales */
+.tabs-shell.tabs-vertical {
+  margin: 0;
+  padding: 0;
+  min-width: 240px;
+  position: sticky;
+  top: 20px;
+  align-self: flex-start;
+}
+
+.tabs-shell.tabs-vertical .tabs {
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tabs-shell.tabs-vertical .tab {
+  flex: none;
+  width: 100%;
+  align-items: flex-start;
+  text-align: left;
+  padding: 16px 20px;
+}
+
+.tabs-shell.tabs-vertical .tab::before {
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: auto;
+  width: 3px;
+  height: 100%;
+  background: linear-gradient(180deg, var(--blue), var(--blue-2));
 }
 
 .tabs {
@@ -861,7 +1062,7 @@ body{
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-top: 8px;
+  margin-top: 4px;
 }
 
 .roundtrip-checkbox input[type="checkbox"] {
@@ -880,7 +1081,17 @@ body{
 
 .form-info {
   grid-column: 1 / -1;
-  margin-top: 6px;
+  margin-top: 4px;
+}
+
+/* Badge y botones en la misma fila */
+.form-info-with-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: -5px;
+  gap: 16px;
 }
 
 .badge {
@@ -907,7 +1118,6 @@ body{
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  margin-top: 12px;
 }
 
 .btn-secondary {
@@ -1119,6 +1329,51 @@ body{
   box-shadow: none !important;
 }
 
+/* Asiento bloqueado (siendo seleccionado por otro usuario) */
+.seat-locked {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  color: white;
+  border-color: #d97706;
+  cursor: not-allowed;
+  opacity: 0.85;
+  position: relative;
+  animation: pulse-lock 2s ease-in-out infinite;
+}
+
+.seat-locked:hover {
+  transform: none !important;
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.4) !important;
+}
+
+.seat-locked .lock-icon {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 10px;
+  animation: lock-shake 0.5s ease-in-out infinite;
+}
+
+@keyframes pulse-lock {
+  0%, 100% {
+    opacity: 0.85;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes lock-shake {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-5deg);
+  }
+  75% {
+    transform: rotate(5deg);
+  }
+}
+
 /* Letras dentro del asiento */
 .seat-letter {
   font-size: 14px;
@@ -1188,6 +1443,11 @@ body{
 .legend-box.selected {
   background: linear-gradient(135deg, var(--blue), var(--blue-2));
   box-shadow: 0 4px 12px rgba(0,102,204,0.2);
+}
+
+.legend-box.locked {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  box-shadow: 0 2px 6px rgba(251, 191, 36, 0.3);
 }
 
 .legend-box.occupied {
@@ -2350,8 +2610,19 @@ body{
     padding: 30px 20px;
   }
   
+  .form-info-with-actions {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
   .controls-actions {
     flex-direction: column;
+    width: 100%;
+  }
+  
+  .controls-actions button {
+    width: 100%;
   }
   
   .datetime-group {
@@ -2675,7 +2946,325 @@ body{
   .benefits-grid {
     grid-template-columns: 1fr;
   }
+}
 
+/* ================================
+   ESTILOS PARA PESTAÑA DE VUELOS
+   ================================ */
+.flights-card {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
 
-  
+.flights-header {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #f1f5f9;
+}
+
+.flights-list {
+  display: grid;
+  gap: 20px;
+  max-height: 600px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.flight-card {
+  background: #f8fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.flight-card:hover {
+  border-color: var(--blue);
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.1);
+  transform: translateY(-2px);
+}
+
+.flight-card.selected {
+  border-color: var(--blue);
+  background: #e6f2ff;
+  box-shadow: 0 6px 20px rgba(0, 102, 204, 0.15);
+}
+
+.flight-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.flight-airline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.airline-logo {
+  font-size: 32px;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.flight-number {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.flight-status {
+  font-size: 13px;
+  color: #10b981;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.flight-duration {
+  text-align: right;
+}
+
+.duration-label {
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.duration-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.flight-route {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.flight-time {
+  text-align: center;
+}
+
+.flight-time:first-child {
+  text-align: left;
+}
+
+.flight-time:last-child {
+  text-align: right;
+}
+
+.time-label {
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.time-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+
+.city-name {
+  font-size: 14px;
+  color: #475569;
+  font-weight: 500;
+}
+
+.flight-path {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.path-line {
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, #0066CC 0%, #00A896 100%);
+  position: absolute;
+}
+
+.plane-icon {
+  position: relative;
+  z-index: 2;
+  background: white;
+  padding: 4px 12px;
+  font-size: 20px;
+  border-radius: 20px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.flight-details {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: white;
+  border-radius: 8px;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detail-label {
+  font-size: 11px;
+  color: #64748b;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.detail-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.flight-prices {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.price-option {
+  background: white;
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+}
+
+.price-option:hover {
+  border-color: var(--blue);
+  transform: scale(1.02);
+}
+
+.price-class {
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.price-amount {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--blue);
+  margin-bottom: 4px;
+}
+
+.price-seats {
+  font-size: 11px;
+  color: #10b981;
+}
+
+.flight-selected-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: var(--blue);
+  color: white;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 4px 8px rgba(0, 102, 204, 0.3);
+}
+
+.spinner {
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid var(--blue);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .flight-route {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .flight-time {
+    text-align: center !important;
+  }
+
+  .flight-path {
+    transform: rotate(90deg);
+    margin: 20px 0;
+  }
+
+  .flight-prices {
+    grid-template-columns: 1fr;
+  }
+
+  .flight-details {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Tabs verticales a horizontales en móvil */
+  .tabs-layout-container {
+    flex-direction: column;
+  }
+
+  .tabs-shell.tabs-vertical {
+    min-width: 100%;
+    position: static;
+    margin-bottom: 24px;
+  }
+
+  .tabs-shell.tabs-vertical .tabs {
+    flex-direction: row;
+    overflow-x: auto;
+  }
+
+  .tabs-shell.tabs-vertical .tab {
+    flex: 1;
+    min-width: 150px;
+    align-items: center;
+    text-align: center;
+  }
+
+  .tabs-shell.tabs-vertical .tab::before {
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: auto;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(90deg, var(--blue), var(--blue-2));
+  }
 }

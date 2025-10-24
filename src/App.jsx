@@ -2,53 +2,13 @@ import React, { useRef, useState, useEffect, useMemo } from "react";
 import { useIsAuthenticated, useMsal } from "@azure/msal-react";
 import { loginRequest } from "./authConfig";
 import ProtectedRoute from "./components/ProtectedRoute";
-import NavBar from "./components/NavBar";
 import AuthTest from "./components/AuthTest";
 import FlightMap from "./components/FlightMap";
 import FlightMap2D from "./components/FlightMap2D";
 import PlaneViewer from "./components/PlaneViewer";
 import SeatSelector from "./components/SeatSelector";
+import { cityAPI, flightAPI } from "./services/api";
 import "./index.css";
-
-/* ---------- datos de ejemplo para el sistema de reserva ---------- */
-const DATA = {
-  "Estados Unidos": [
-    { name: "Miami", coords: [-80.1918, 25.7617] },
-    { name: "New York", coords: [-74.0060, 40.7128] },
-    { name: "Los Angeles", coords: [-118.2437, 34.0522] },
-  ],
-  "Colombia": [
-    { name: "Bogotá", coords: [-74.0721, 4.7110] },
-    { name: "Medellín", coords: [-75.5636, 6.2442] },
-    { name: "Cali", coords: [-76.5215, 3.4516] },
-    { name: "Cartagena", coords: [-75.4794, 10.3910] },
-  ],
-  "España": [
-    { name: "Madrid", coords: [-3.7038, 40.4168] },
-    { name: "Barcelona", coords: [2.1734, 41.3851] },
-  ],
-  "Perú": [{ name: "Lima", coords: [-77.0428, -12.0464] }],
-  "Argentina": [
-    { name: "Buenos Aires", coords: [-58.3816, -34.6037] },
-    { name: "Córdoba", coords: [-64.1811, -31.4201] }
-  ],
-  "Brasil": [
-    { name: "Río de Janeiro", coords: [-43.1729, -22.9068] },
-    { name: "Sao Paulo", coords: [-46.6333, -23.5505] }
-  ],
-  "Chile": [
-    { name: "Santiago", coords: [-70.6693, -33.4489] }
-  ],
-  "México": [
-    { name: "Ciudad de México", coords: [-99.1332, 19.4326] }
-  ],
-  "Francia": [
-    { name: "París", coords: [2.3522, 48.8566] }
-  ],
-  "Italia": [
-    { name: "Roma", coords: [12.4964, 41.9028] }
-  ]
-};
 
 export default function App() {
   const [email, setEmail] = useState("");
@@ -61,61 +21,122 @@ export default function App() {
   
   // ESTADOS PARA EL SISTEMA DE RESERVA - ACTUALIZADOS CON LA NUEVA ESTRUCTURA
   const [activeTab, setActiveTab] = useState(0);
-  const [originCountry, setOriginCountry] = useState("");
   const [originCity, setOriginCity] = useState("");
-  const [destCountry, setDestCountry] = useState("");
   const [destCity, setDestCity] = useState("");
   const [departureDate, setDepartureDate] = useState("");
-  const [departureTime, setDepartureTime] = useState("");
   const [returnDate, setReturnDate] = useState("");
-  const [returnTime, setReturnTime] = useState("");
   const [roundTrip, setRoundTrip] = useState(false);
   const [routeConfirmed, setRouteConfirmed] = useState(false);
+  const [selectedFlight, setSelectedFlight] = useState(null);
   const [selectedSeat, setSelectedSeat] = useState(null);
+  const [lockedSeatId, setLockedSeatId] = useState(null); // ID del asiento bloqueado
+
+  // Estados para ciudades desde la base de datos
+  const [cities, setCities] = useState([]);
+  const [loadingCities, setLoadingCities] = useState(true);
+
+  // Estados para vuelos
+  const [flights, setFlights] = useState([]);
+  const [loadingFlights, setLoadingFlights] = useState(false);
 
   // Estados para autenticación
   const isAuthenticated = useIsAuthenticated();
   const { instance, accounts } = useMsal();
   const [tokenSaved, setTokenSaved] = useState(false);
 
-  // Datos para el sistema de reserva
-  const countryOptions = Object.keys(DATA);
-  
-  const originCities = useMemo(() => 
-    originCountry ? DATA[originCountry] : [], 
-    [originCountry]
-  );
-  
-  const destCities = useMemo(() => 
-    destCountry ? DATA[destCountry] : [], 
-    [destCountry]
-  );
+  // Cargar ciudades desde la API
+  useEffect(() => {
+    const fetchCities = async () => {
+      try {
+        setLoadingCities(true);
+        const response = await cityAPI.getAllCities();
+        setCities(response.data);
+      } catch (error) {
+        console.error('Error al cargar ciudades:', error);
+        setCities([]);
+      } finally {
+        setLoadingCities(false);
+      }
+    };
 
-  const originCoords = useMemo(
-    () => originCities.find((c) => c.name === originCity)?.coords ?? null,
-    [originCities, originCity]
-  );
-  
-  const destCoords = useMemo(
-    () => destCities.find((c) => c.name === destCity)?.coords ?? null,
-    [destCities, destCity]
-  );
+    fetchCities();
+  }, []);
 
-  const samePlace = originCountry === destCountry && originCity === destCity;
+  // Obtener coordenadas de las ciudades seleccionadas
+  const originCoords = useMemo(() => {
+    const city = cities.find(c => c.id === Number(originCity));
+    // Aproximación: usar coordenadas basadas en la ciudad (esto debería venir de la BD)
+    // Por ahora, retornamos null y lo manejaremos después
+    return city ? getCoordsForCity(city.nombre) : null;
+  }, [originCity, cities]);
+  
+  const destCoords = useMemo(() => {
+    const city = cities.find(c => c.id === Number(destCity));
+    return city ? getCoordsForCity(city.nombre) : null;
+  }, [destCity, cities]);
+
+  const samePlace = originCity === destCity;
+
+  // Función auxiliar para obtener coordenadas (temporal - idealmente esto debe venir de la BD)
+  function getCoordsForCity(cityName) {
+    const coordsMap = {
+      'Bogotá': [-74.0721, 4.7110],
+      'Medellín': [-75.5636, 6.2442],
+      'Cali': [-76.5215, 3.4516],
+      'Cartagena': [-75.4794, 10.3910],
+      'Madrid': [-3.7038, 40.4168],
+      'Barcelona': [2.1734, 41.3851],
+      'Nueva York': [-74.0060, 40.7128],
+      'Los Ángeles': [-118.2437, 34.0522],
+      'Miami': [-80.1918, 25.7617],
+      'Ciudad de México': [-99.1332, 19.4326],
+      'Cancún': [-86.8515, 21.1619],
+      'Londres': [-0.1276, 51.5074],
+      'París': [2.3522, 48.8566],
+      'São Paulo': [-46.6333, -23.5505],
+      'Buenos Aires': [-58.3816, -34.6037]
+    };
+    return coordsMap[cityName] || null;
+  }
 
   /* Validación simple - solo verifica que estén llenos los campos básicos */
   const firstCompleted = Boolean(
-    originCountry &&
     originCity &&
-    destCountry &&
     destCity &&
     !samePlace &&
-    departureDate &&
-    departureTime
+    departureDate
   );
 
   // Función para obtener clase CSS basada en si el campo está lleno o vacío
   const getInputClass = (value) => value ? "filled" : "";
+
+  // Función para buscar vuelos
+  const searchFlights = async () => {
+    if (!originCity || !destCity || !departureDate) {
+      alert("Por favor completa origen, destino y fecha de salida");
+      return;
+    }
+
+    try {
+      setLoadingFlights(true);
+      const response = await flightAPI.searchFlights({
+        origin: originCity,
+        destination: destCity,
+        date: departureDate
+      });
+      setFlights(response.data);
+      
+      if (response.data.length === 0) {
+        alert("No se encontraron vuelos para esta ruta y fecha");
+      }
+    } catch (error) {
+      console.error('Error al buscar vuelos:', error);
+      alert("Error al buscar vuelos. Por favor intenta de nuevo.");
+      setFlights([]);
+    } finally {
+      setLoadingFlights(false);
+    }
+  };
 
   // control de apertura de pestañas
   const tryOpenTab = (tabIndex) => {
@@ -128,20 +149,32 @@ export default function App() {
         alert("Por favor completa todos los campos de origen y destino primero");
         return;
       }
+      // Buscar vuelos automáticamente al abrir la pestaña de vuelos
+      searchFlights();
       setActiveTab(1);
       return;
     }
     if (tabIndex === 2) {
-      if (!routeConfirmed) {
-        setActiveTab(1);
+      if (!selectedFlight) {
+        alert("Por favor selecciona un vuelo primero");
         return;
       }
       setActiveTab(2);
+      return;
+    }
+    if (tabIndex === 3) {
+      if (!selectedSeat) {
+        alert("Por favor selecciona un asiento primero");
+        return;
+      }
+      setActiveTab(3);
     }
   };
 
   const firstStatusText = firstCompleted ? "Completado" : samePlace ? "Origen y destino iguales" : "Completa los campos requeridos";
-  const secondStatusText = routeConfirmed ? "Ruta confirmada" : "Confirma la ruta para continuar";
+  const secondStatusText = selectedFlight ? `Vuelo: ${selectedFlight.numeroVuelo}` : "Selecciona un vuelo";
+  const thirdStatusText = routeConfirmed ? "Asiento confirmado" : "Selecciona tu asiento";
+  const fourthStatusText = routeConfirmed ? "Ruta confirmada" : "Confirma la ruta";
 
   // Funciones existentes de la website
   function submit(e) {
@@ -267,6 +300,25 @@ export default function App() {
       saveAccessToken();
     }
   }, [isAuthenticated, accounts, instance, tokenSaved]);
+
+  // Efecto para desbloquear asiento cuando el usuario regresa al tab de asientos
+  useEffect(() => {
+    // Si el usuario está en el tab de asientos (tab 2) y hay un asiento bloqueado
+    // significa que regresó desde el tab de mapas, debemos liberar el bloqueo
+    if (activeTab === 2 && lockedSeatId) {
+      const releasePreviousLock = async () => {
+        try {
+          const { seatLockAPI } = await import('./services/api');
+          await seatLockAPI.releaseLock(lockedSeatId);
+          setLockedSeatId(null);
+          console.log('🔓 Asiento desbloqueado al regresar a selección');
+        } catch (error) {
+          console.error('Error al liberar bloqueo al regresar:', error);
+        }
+      };
+      releasePreviousLock();
+    }
+  }, [activeTab, lockedSeatId]);
 
   // Imágenes para el carrusel del hero
   const heroImages = [
@@ -479,9 +531,6 @@ export default function App() {
 
   return (
     <ProtectedRoute>
-      {/* Agregar NavBar solo cuando está autenticado */}
-      <NavBar />
-      
       <div className="site-root" style={{ paddingTop: '70px' }}>
         {/* HEADER MEJORADO Y DINÁMICO */}
         <header className={`site-header ${isHeaderVisible ? 'visible' : 'hidden'}`}>
@@ -497,11 +546,591 @@ export default function App() {
               <a href="#cdt-mechanics-2">Cómo reservar</a>
               <a href="#contact">Contacto</a>
             </nav>
+
+            {/* Usuario en el header */}
+            {accounts.length > 0 && (
+              <div className="header-user">
+                <div className="user-info" onClick={() => {
+                  const showMenu = document.querySelector('.header-dropdown-menu');
+                  if (showMenu) {
+                    showMenu.style.display = showMenu.style.display === 'none' ? 'block' : 'none';
+                  }
+                }}>
+                  <div className="user-avatar">
+                    {accounts[0].name?.charAt(0).toUpperCase() || 'U'}
+                  </div>
+                  <div className="user-details">
+                    <span className="user-name">{accounts[0].name || 'Usuario'}</span>
+                  </div>
+                  <svg 
+                    className="dropdown-icon"
+                    width="16" 
+                    height="16" 
+                    viewBox="0 0 16 16" 
+                    fill="currentColor"
+                  >
+                    <path d="M4 6l4 4 4-4z"/>
+                  </svg>
+                </div>
+
+                {/* Menú desplegable */}
+                <div className="header-dropdown-menu" style={{ display: 'none' }}>
+                  <div className="menu-header">
+                    <div className="menu-user-avatar">
+                      {accounts[0].name?.charAt(0).toUpperCase() || 'U'}
+                    </div>
+                    <div className="menu-user-info">
+                      <div className="menu-user-name">{accounts[0].name || 'Usuario'}</div>
+                      <div className="menu-user-email">{accounts[0].username || ''}</div>
+                    </div>
+                  </div>
+                  
+                  <div className="menu-divider" />
+                  
+                  <button className="menu-item" onClick={() => alert('Perfil - En desarrollo')}>
+                    <span className="menu-icon">👤</span>
+                    <span>Mi Perfil</span>
+                  </button>
+                  
+                  <button className="menu-item" onClick={() => alert('Reservas - En desarrollo')}>
+                    <span className="menu-icon">🎫</span>
+                    <span>Mis Reservas</span>
+                  </button>
+                  
+                  <div className="menu-divider" />
+                  
+                  <button className="menu-item logout" onClick={() => {
+                    sessionStorage.clear();
+                    instance.logoutPopup({ mainWindowRedirectUri: '/' });
+                  }}>
+                    <span className="menu-icon">🚪</span>
+                    <span>Cerrar Sesión</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </header>
 
         {/* MAIN */}
         <main id="main-content">
+          {/* NUEVO SISTEMA DE RESERVA CON PESTAÑAS - AHORA AL INICIO */}
+          <section className="booking-tabs-section" style={{ marginTop: '80px', marginBottom: '40px' }}>
+            <div className="booking-tabs-inner">
+              {/* TÍTULO DE LA SECCIÓN */}
+              <div className="booking-tabs-header">
+                <p className="tiny" style={{ textAlign: 'center', marginBottom: '8px', color: 'var(--blue)', fontWeight: '600', letterSpacing: '1px' }}>RESERVA TU VUELO</p>
+                <h2 style={{ 
+                  textAlign: 'center', 
+                  fontSize: '2.5rem', 
+                  fontWeight: '800', 
+                  marginBottom: '12px',
+                  background: 'linear-gradient(135deg, var(--blue) 0%, var(--teal) 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text'
+                }}>
+                  Tu próxima aventura comienza aquí
+                </h2>
+                <p style={{ 
+                  textAlign: 'center', 
+                  fontSize: '1.1rem', 
+                  color: 'var(--muted)', 
+                  maxWidth: '600px', 
+                  margin: '0 auto 40px',
+                  lineHeight: '1.6'
+                }}>
+                  Reserva tu vuelo en minutos con nuestro sistema simple y seguro
+                </p>
+              </div>
+
+              {/* CONTENEDOR PRINCIPAL CON TABS A LA IZQUIERDA */}
+              <div className="tabs-layout-container">
+                {/* TAB NAV - VERTICAL A LA IZQUIERDA */}
+                <div className="tabs-shell tabs-vertical">
+                  <div className="tabs">
+                    <button className={`tab ${activeTab === 0 ? "active" : ""}`} onClick={() => tryOpenTab(0)}>
+                      <div className="tab-title">1. Origen & Destino</div>
+                      <div className="tab-meta">{firstStatusText} {firstCompleted && <span className="tab-check">✓</span>}</div>
+                    </button>
+
+                    <button className={`tab ${activeTab === 1 ? "active" : ""} ${!firstCompleted ? "locked" : ""}`} onClick={() => tryOpenTab(1)}>
+                      <div className="tab-title">2. Vuelos</div>
+                      <div className="tab-meta">{secondStatusText}</div>
+                    </button>
+
+                    <button className={`tab ${activeTab === 2 ? "active" : ""} ${!selectedFlight ? "locked" : ""}`} onClick={() => tryOpenTab(2)}>
+                      <div className="tab-title">3. Asientos</div>
+                      <div className="tab-meta">{thirdStatusText}</div>
+                    </button>
+
+                    <button className={`tab ${activeTab === 3 ? "active" : ""} ${!selectedSeat ? "locked" : ""}`} onClick={() => tryOpenTab(3)}>
+                      <div className="tab-title">4. Mapas</div>
+                      <div className="tab-meta">{fourthStatusText}</div>
+                    </button>
+                  </div>
+                </div>
+
+                {/* TAB CONTENT */}
+                <div className="tab-content" style={{ flex: 1 }}>
+                {/* TAB 0 - CONTROLES */}
+                {activeTab === 0 && (
+                  <div className="card controls-card">
+                    <div className="controls-inner">
+                      <div className="controls-header">
+                        <div>
+                          <h3 className="card-title">Origen & destino</h3>
+                          <div className="muted">Completa estos campos para desbloquear los mapas.</div>
+                        </div>
+                      </div>
+
+                      <div className="controls-grid-inner">
+                        {/* ORIGEN */}
+                        <div className="origin-section">
+                          <div className="form-group">
+                            <label htmlFor="origin-city">Origen</label>
+                            <select 
+                              id="origin-city" 
+                              className={`form-select ${getInputClass(originCity)}`}
+                              value={originCity} 
+                              onChange={(e) => setOriginCity(e.target.value)}
+                              disabled={loadingCities}
+                            >
+                              <option value="">
+                                {loadingCities ? 'Cargando ciudades...' : 'Selecciona un origen'}
+                              </option>
+                              {cities.map((city) => (
+                                <option key={city.id} value={city.id}>
+                                  {city.nombre} ({city.codigoIata}) - {city.pais}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          {/* Fecha de salida */}
+                          <div className="form-group">
+                            <label htmlFor="departure-date">Fecha de salida</label>
+                            <input 
+                              id="departure-date" 
+                              className={`form-input ${getInputClass(departureDate)}`}
+                              type="date" 
+                              value={departureDate} 
+                              onChange={(e) => setDepartureDate(e.target.value)} 
+                            />
+                          </div>
+                        </div>
+
+                        {/* DIVISOR */}
+                        <div className="route-divider" aria-hidden>
+                          <div className="route-icon" title="Ruta">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+                              <path d="M2 21l21-9L2 3v7l15 2-15 2v7z" fill="#fff"/>
+                            </svg>
+                          </div>
+                        </div>
+
+                        {/* DESTINO */}
+                        <div className="destination-section">
+                          <div className="form-group">
+                            <label htmlFor="dest-city">Destino</label>
+                            <select 
+                              id="dest-city" 
+                              className={`form-select ${getInputClass(destCity)}`}
+                              value={destCity} 
+                              onChange={(e) => setDestCity(e.target.value)}
+                              disabled={loadingCities}
+                            >
+                              <option value="">
+                                {loadingCities ? 'Cargando ciudades...' : 'Selecciona un destino'}
+                              </option>
+                              {cities.map((city) => (
+                                <option key={city.id} value={city.id}>
+                                  {city.nombre} ({city.codigoIata}) - {city.pais}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          {/* Fecha de regreso */}
+                          <div className="form-group">
+                            <label htmlFor="return-date">Fecha de regreso</label>
+                            <input 
+                              id="return-date" 
+                              className={`form-input ${getInputClass(returnDate)}`}
+                              type="date" 
+                              value={returnDate} 
+                              onChange={(e) => setReturnDate(e.target.value)} 
+                              disabled={!roundTrip} 
+                            />
+                          </div>
+                        </div>
+
+                        {/* Checkbox */}
+                        <div className="roundtrip-checkbox">
+                          <input id="roundTrip" type="checkbox" checked={roundTrip} onChange={(e) => setRoundTrip(e.target.checked)} />
+                          <label htmlFor="roundTrip">Ida y vuelta</label>
+                        </div>
+
+                        {/* Badge y Botones en la misma fila */}
+                        <div className="form-info-with-actions">
+                          <div className={`badge ${samePlace ? "badge-warn" : (firstCompleted ? "badge-ok" : "badge-warn")}`}>
+                            {samePlace ? "Origen = Destino" : (firstCompleted ? "Todo listo" : "Faltan campos requeridos")}
+                          </div>
+                          
+                          <div className="controls-actions">
+                            <button className="btn-secondary" onClick={() => {
+                              setOriginCity("");
+                              setDestCity("");
+                              setRoundTrip(false);
+                              setDepartureDate("");
+                              setReturnDate("");
+                            }}>Limpiar todo</button>
+
+                            <button
+                              className="btn-cta"
+                              disabled={!firstCompleted}
+                              onClick={() => {
+                                searchFlights();
+                                setActiveTab(1);
+                              }}
+                            >
+                              Buscar vuelos →
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 1 - VUELOS */}
+                {activeTab === 1 && (
+                  <div className="card flights-card">
+                    <div className="flights-header">
+                      <div>
+                        <h3 className="card-title">Vuelos disponibles</h3>
+                        <div className="muted">
+                          {cities.find(c => c.id === Number(originCity))?.nombre} → {cities.find(c => c.id === Number(destCity))?.nombre} | {departureDate}
+                        </div>
+                      </div>
+                    </div>
+
+                    {loadingFlights ? (
+                      <div style={{ padding: '40px', textAlign: 'center' }}>
+                        <div className="spinner"></div>
+                        <p>Buscando vuelos...</p>
+                      </div>
+                    ) : flights.length === 0 ? (
+                      <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>
+                        <p>No se encontraron vuelos para esta ruta y fecha</p>
+                        <button className="btn-secondary" onClick={() => setActiveTab(0)}>
+                          Cambiar búsqueda
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flights-list">
+                        {flights.map((flight) => (
+                          <div 
+                            key={flight.id} 
+                            className={`flight-card ${selectedFlight?.id === flight.id ? 'selected' : ''}`}
+                            onClick={() => setSelectedFlight(flight)}
+                          >
+                            <div className="flight-header">
+                              <div className="flight-airline">
+                                <div>
+                                  <div className="flight-number">{flight.numeroVuelo}</div>
+                                  <div className="flight-status">{flight.estado}</div>
+                                </div>
+                              </div>
+                              <div className="flight-duration">
+                                <div className="duration-label">Duración</div>
+                                <div className="duration-value">{Math.floor(flight.duracionMinutos / 60)}h {flight.duracionMinutos % 60}m</div>
+                              </div>
+                            </div>
+
+                            <div className="flight-route">
+                              <div className="flight-time">
+                                <div className="time-label">Salida</div>
+                                <div className="time-value">{new Date(flight.fechaSalida).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</div>
+                                <div className="city-name">{flight.ciudadOrigen.nombre}</div>
+                              </div>
+
+                              <div className="flight-path">
+                                <div className="path-line"></div>
+                                <div className="plane-icon">✈</div>
+                              </div>
+
+                              <div className="flight-time">
+                                <div className="time-label">Llegada</div>
+                                <div className="time-value">{new Date(flight.fechaLlegada).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</div>
+                                <div className="city-name">{flight.ciudadDestino.nombre}</div>
+                              </div>
+                            </div>
+
+                            <div className="flight-details">
+                              <div className="detail-item">
+                                <span className="detail-label">Terminal:</span>
+                                <span className="detail-value">{flight.terminal}</span>
+                              </div>
+                              <div className="detail-item">
+                                <span className="detail-label">Puerta:</span>
+                                <span className="detail-value">{flight.puertaEmbarque}</span>
+                              </div>
+                              <div className="detail-item">
+                                <span className="detail-label">Asientos disponibles:</span>
+                                <span className="detail-value">{flight.asientosDisponiblesEconomica + flight.asientosDisponiblesEjecutiva + flight.asientosDisponiblesPrimeraClase}</span>
+                              </div>
+                            </div>
+
+                            <div className="flight-prices">
+                              <div className="price-option">
+                                <div className="price-class">Económica</div>
+                                <div className="price-amount">${flight.precioEconomica}</div>
+                                <div className="price-seats">{flight.asientosDisponiblesEconomica} disponibles</div>
+                              </div>
+                              <div className="price-option">
+                                <div className="price-class">Ejecutiva</div>
+                                <div className="price-amount">${flight.precioEjecutiva}</div>
+                                <div className="price-seats">{flight.asientosDisponiblesEjecutiva} disponibles</div>
+                              </div>
+                              <div className="price-option">
+                                <div className="price-class">Primera Clase</div>
+                                <div className="price-amount">${flight.precioPrimeraClase}</div>
+                                <div className="price-seats">{flight.asientosDisponiblesPrimeraClase} disponibles</div>
+                              </div>
+                            </div>
+
+                            {selectedFlight?.id === flight.id && (
+                              <div className="flight-selected-badge">
+                                ✓ Vuelo seleccionado
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 20, gap: 8 }}>
+                      <button className="btn-secondary" onClick={() => setActiveTab(0)}>Volver</button>
+                      <button
+                        className="btn-cta"
+                        disabled={!selectedFlight}
+                        onClick={() => setActiveTab(2)}
+                      >
+                        Continuar a asientos →
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 2 - ASIENTOS */}
+                {activeTab === 2 && (
+                  <div className="card seats-card">
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div>
+                        <h3 className="card-title" style={{ margin: 0 }}>Mapa de asientos</h3>
+                        <div className="muted" style={{ marginTop: 6 }}>Selecciona tu asiento</div>
+                      </div>
+                      <div className="seat-legend" aria-hidden>
+                        <div><span className="legend-box available" /> Disponible</div>
+                        <div><span className="legend-box selected" /> Seleccionado</div>
+                        <div><span className="legend-box occupied" /> Ocupado</div>
+                      </div>
+                    </div>
+
+                    <div style={{ marginTop: 12 }}>
+                      <SeatSelector 
+                        onSelect={(s) => setSelectedSeat(s)} 
+                        flightId={selectedFlight?.id}
+                      />
+                    </div>
+
+                    {/* BOTONES ASIENTOS */}
+                    <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 12 }}>
+                      <button className="btn-secondary" onClick={async () => {
+                        // Si hay un asiento bloqueado, liberarlo al volver
+                        if (lockedSeatId) {
+                          try {
+                            const { seatLockAPI } = await import('./services/api');
+                            await seatLockAPI.releaseLock(lockedSeatId);
+                            setLockedSeatId(null);
+                            console.log('🔓 Asiento desbloqueado al volver');
+                          } catch (error) {
+                            console.error('Error al liberar bloqueo:', error);
+                          }
+                        }
+                        setActiveTab(1);
+                      }}>Volver a vuelos</button>
+                      <button className="btn-cta" disabled={!selectedSeat} onClick={async () => {
+                        // Bloquear el asiento al continuar a mapas
+                        if (selectedSeat && selectedSeat.dbId) {
+                          try {
+                            const { seatLockAPI } = await import('./services/api');
+                            const userId = sessionStorage.getItem('userSessionId') || 
+                                          'user-' + Math.random().toString(36).substr(2, 9);
+                            sessionStorage.setItem('userSessionId', userId);
+                            
+                            const response = await seatLockAPI.lockSeat(selectedSeat.dbId, userId);
+                            if (response.data.success) {
+                              setLockedSeatId(selectedSeat.dbId);
+                              setRouteConfirmed(true);
+                              setActiveTab(3);
+                              console.log('✅ Asiento bloqueado por 15 minutos');
+                            } else {
+                              alert('Este asiento está siendo seleccionado por otro usuario. Por favor regresa y elige otro asiento.');
+                            }
+                          } catch (error) {
+                            console.error('Error al bloquear asiento:', error);
+                            alert('No se pudo bloquear el asiento. Por favor intenta de nuevo.');
+                          }
+                        } else {
+                          setRouteConfirmed(true);
+                          setActiveTab(3);
+                        }
+                      }}>
+                        Continuar a mapas →
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 3 - MAPAS */}
+                {activeTab === 3 && (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 18 }}>
+                    <div className="card map2d-card">
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <h4 style={{ margin: 0 }}>Mapa 2D</h4>
+                        <div className="muted">Arrastra o haz zoom para inspeccionar la ruta</div>
+                      </div>
+
+                      <div className="map-inner" style={{ marginTop: 8 }}>
+                        {originCoords && destCoords ? (
+                          <FlightMap2D
+                            origin={originCoords}
+                            destination={destCoords}
+                            drawSpeed={8}
+                            planeSpeed={2.4}
+                            steps={240}
+                            strokeColor="#0ea5a4"
+                            strokeWidth={4}
+                            height="260px"
+                            key={`2d_${originCoords.join(",")}_${destCoords.join(",")}`}
+                          />
+                        ) : (
+                          <div style={{ height: '260px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc', color: '#64748b' }}>
+                            Completa los campos de origen y destino para ver el mapa
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 420px", gap: 18 }}>
+                      <div className="card map-card">
+                        <h4 style={{ margin: 0, marginBottom: 8 }}>Mapa de recorrido</h4>
+                        <div className="map-inner" style={{ height: 220 }}>
+                          {originCoords && destCoords ? (
+                            <FlightMap
+                              origin={originCoords}
+                              destination={destCoords}
+                              drawSpeed={12}
+                              planeSpeed={3}
+                              particlesCount={18}
+                              startPlaneBeforeComplete={false}
+                              key={`${originCoords.join(",")}_${destCoords.join(",")}`}
+                            />
+                          ) : (
+                            <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc', color: '#64748b' }}>
+                              Completa los campos de origen y destino para ver el mapa 3D
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="card viewer-card">
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <h4 style={{ margin: 0 }}>Avión 3D</h4>
+                          <div className="muted">Interactúa con el modelo</div>
+                        </div>
+                        <div className="viewer-body" style={{ marginTop: 8 }}>
+                          <PlaneViewer modelPath="/models/boeing787.glb" envPath="/models/env.hdr" height="220px" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* BOTONES MAPAS */}
+                    <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12, gap: 8 }}>
+                      <button className="btn-secondary" onClick={async () => {
+                        // Si hay un asiento bloqueado, liberarlo al volver
+                        if (lockedSeatId) {
+                          try {
+                            const { seatLockAPI } = await import('./services/api');
+                            await seatLockAPI.releaseLock(lockedSeatId);
+                            setLockedSeatId(null);
+                            console.log('🔓 Asiento desbloqueado al volver');
+                          } catch (error) {
+                            console.error('Error al liberar bloqueo:', error);
+                          }
+                        }
+                        setActiveTab(2);
+                      }}>Volver a asientos</button>
+                      <button className="btn-cta" onClick={async () => {
+                        if (!selectedFlight || !selectedSeat) {
+                          alert('Por favor selecciona un vuelo y un asiento');
+                          return;
+                        }
+
+                        try {
+                          const { reservationAPI } = await import('./services/api');
+                          
+                          // Preparar datos de la reserva
+                          const reservationData = {
+                            flightId: selectedFlight.id,
+                            seatId: selectedSeat.dbId,
+                            passengerName: accounts[0]?.name || 'Usuario',
+                            passengerEmail: accounts[0]?.username || 'usuario@ejemplo.com'
+                          };
+
+                          console.log('📤 Enviando reserva:', reservationData);
+                          
+                          // Crear la reserva (esto marca el asiento como ocupado en la BD)
+                          const response = await reservationAPI.createReservation(reservationData);
+                          
+                          console.log('✅ Reserva creada exitosamente:', response.data);
+                          
+                          // Limpiar el ID de asiento bloqueado
+                          setLockedSeatId(null);
+                          
+                          // Mostrar confirmación
+                          const originCityName = cities.find(c => c.id === Number(originCity))?.nombre || 'origen';
+                          const destCityName = cities.find(c => c.id === Number(destCity))?.nombre || 'destino';
+                          alert(`¡Reserva confirmada exitosamente! 🎉\n\nVuelo: ${selectedFlight.numeroVuelo}\nAsiento: ${selectedSeat.id}\nRuta: ${originCityName} → ${destCityName}\n\nTu asiento ha sido confirmado y marcado como ocupado.`);
+                          
+                          // Opcional: resetear el formulario o redirigir
+                          // setActiveTab(0);
+                          
+                        } catch (error) {
+                          console.error('❌ Error al confirmar reserva:', error);
+                          
+                          if (error.response?.status === 400) {
+                            alert('Error: El asiento ya está ocupado o no está bloqueado. Por favor intenta nuevamente.');
+                          } else if (error.response?.data?.message) {
+                            alert(`Error al confirmar la reserva: ${error.response.data.message}`);
+                          } else {
+                            alert('Ocurrió un error al confirmar la reserva. Por favor intenta nuevamente.');
+                          }
+                        }
+                      }}>
+                        Confirmar reserva →
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+              {/* Cierre del contenedor flex principal */}
+            </div>
+            </div>
+          </section>
+
           {/* HERO SECTION CON CARRUSEL */}
           <section className="hero full-hero">
             <div className="hero-picture">
@@ -633,323 +1262,6 @@ export default function App() {
                   </svg>
                 </button>
                 <p className="booking-note">Reserva en menos de 5 minutos • Sin cargos ocultos</p>
-              </div>
-            </div>
-          </section>
-
-          {/* NUEVO SISTEMA DE RESERVA CON PESTAÑAS INTEGRADO - REEMPLAZA LA SECCIÓN ANTERIOR */}
-          <section className="booking-tabs-section">
-            <div className="booking-tabs-inner">
-              {/* TAB NAV */}
-              <div className="tabs-shell">
-                <div className="tabs">
-                  <button className={`tab ${activeTab === 0 ? "active" : ""}`} onClick={() => tryOpenTab(0)}>
-                    <div className="tab-title">1. Origen & Destino</div>
-                    <div className="tab-meta">{firstStatusText} {firstCompleted && <span className="tab-check">✓</span>}</div>
-                  </button>
-
-                  <button className={`tab ${activeTab === 1 ? "active" : ""} ${!firstCompleted ? "locked" : ""}`} onClick={() => tryOpenTab(1)}>
-                    <div className="tab-title">2. Mapas</div>
-                    <div className="tab-meta">{secondStatusText} {!routeConfirmed && <span className="tab-lock">🔒</span>}</div>
-                  </button>
-
-                  <button className={`tab ${activeTab === 2 ? "active" : ""} ${!routeConfirmed ? "locked" : ""}`} onClick={() => tryOpenTab(2)}>
-                    <div className="tab-title">3. Asientos</div>
-                    <div className="tab-meta">{selectedSeat ? `Asiento: ${selectedSeat.id}` : (routeConfirmed ? "Selecciona un asiento" : "Bloqueado")} {!routeConfirmed && <span className="tab-lock">🔒</span>}</div>
-                  </button>
-                </div>
-              </div>
-
-              {/* TAB CONTENT */}
-              <div className="tab-content">
-                {/* TAB 0 - CONTROLES */}
-                {activeTab === 0 && (
-                  <div className="card controls-card">
-                    <div className="controls-inner">
-                      <div className="controls-header">
-                        <div>
-                          <h3 className="card-title">Origen & destino</h3>
-                          <div className="muted">Completa estos campos para desbloquear los mapas.</div>
-                        </div>
-                      </div>
-
-                      <div className="controls-grid-inner">
-                        {/* ORIGEN */}
-                        <div className="origin-section">
-                          <div className="form-group">
-                            <label htmlFor="origin-country">Origen — País</label>
-                            <select 
-                              id="origin-country" 
-                              className={`form-select ${getInputClass(originCountry)}`}
-                              value={originCountry} 
-                              onChange={(e) => { 
-                                const c = e.target.value; 
-                                setOriginCountry(c); 
-                                setOriginCity(""); // Resetear ciudad cuando cambia país
-                              }}
-                            >
-                              <option value="">Selecciona un país</option>
-                              {countryOptions.map((c) => <option key={c} value={c}>{c}</option>)}
-                            </select>
-                          </div>
-
-                          <div className="form-group">
-                            <label htmlFor="origin-city">Origen — Ciudad</label>
-                            <select 
-                              id="origin-city" 
-                              className={`form-select ${getInputClass(originCity)}`}
-                              value={originCity} 
-                              onChange={(e) => setOriginCity(e.target.value)}
-                              disabled={!originCountry}
-                            >
-                              <option value="">Selecciona una ciudad</option>
-                              {originCities.map((city) => <option key={city.name} value={city.name}>{city.name}</option>)}
-                            </select>
-                          </div>
-
-                          {/* Fecha / Hora de salida */}
-                          <div className="datetime-group">
-                            <div className="date-input">
-                              <label htmlFor="departure-date">Fecha de salida</label>
-                              <input 
-                                id="departure-date" 
-                                className={`form-input ${getInputClass(departureDate)}`}
-                                type="date" 
-                                value={departureDate} 
-                                onChange={(e) => setDepartureDate(e.target.value)} 
-                              />
-                            </div>
-                            <div className="time-input">
-                              <label htmlFor="departure-time">Hora</label>
-                              <input 
-                                id="departure-time" 
-                                className={`form-input ${getInputClass(departureTime)}`}
-                                type="time" 
-                                value={departureTime} 
-                                onChange={(e) => setDepartureTime(e.target.value)} 
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* DIVISOR */}
-                        <div className="route-divider" aria-hidden>
-                          <div className="route-icon" title="Ruta">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
-                              <path d="M2 21l21-9L2 3v7l15 2-15 2v7z" fill="#fff"/>
-                            </svg>
-                          </div>
-                        </div>
-
-                        {/* DESTINO */}
-                        <div className="destination-section">
-                          <div className="form-group">
-                            <label htmlFor="dest-country">Destino — País</label>
-                            <select 
-                              id="dest-country" 
-                              className={`form-select ${getInputClass(destCountry)}`}
-                              value={destCountry} 
-                              onChange={(e) => { 
-                                const c = e.target.value; 
-                                setDestCountry(c); 
-                                setDestCity(""); // Resetear ciudad cuando cambia país
-                              }}
-                            >
-                              <option value="">Selecciona un país</option>
-                              {countryOptions.map((c) => <option key={c} value={c}>{c}</option>)}
-                            </select>
-                          </div>
-
-                          <div className="form-group">
-                            <label htmlFor="dest-city">Destino — Ciudad</label>
-                            <select 
-                              id="dest-city" 
-                              className={`form-select ${getInputClass(destCity)}`}
-                              value={destCity} 
-                              onChange={(e) => setDestCity(e.target.value)}
-                              disabled={!destCountry}
-                            >
-                              <option value="">Selecciona una ciudad</option>
-                              {destCities.map((city) => <option key={city.name} value={city.name}>{city.name}</option>)}
-                            </select>
-                          </div>
-
-                          {/* Fecha / Hora de regreso */}
-                          <div className="datetime-group">
-                            <div className="date-input">
-                              <label htmlFor="return-date">Fecha de regreso</label>
-                              <input 
-                                id="return-date" 
-                                className={`form-input ${getInputClass(returnDate)}`}
-                                type="date" 
-                                value={returnDate} 
-                                onChange={(e) => setReturnDate(e.target.value)} 
-                                disabled={!roundTrip} 
-                              />
-                            </div>
-                            <div className="time-input">
-                              <label htmlFor="return-time">Hora</label>
-                              <input 
-                                id="return-time" 
-                                className={`form-input ${getInputClass(returnTime)}`}
-                                type="time" 
-                                value={returnTime} 
-                                onChange={(e) => setReturnTime(e.target.value)} 
-                                disabled={!roundTrip} 
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Checkbox */}
-                        <div className="roundtrip-checkbox">
-                          <input id="roundTrip" type="checkbox" checked={roundTrip} onChange={(e) => setRoundTrip(e.target.checked)} />
-                          <label htmlFor="roundTrip">Ida y vuelta</label>
-                        </div>
-
-                        <div className="form-info">
-                          <div className={`badge ${samePlace ? "badge-warn" : (firstCompleted ? "badge-ok" : "badge-warn")}`}>
-                            {samePlace ? "Origen = Destino" : (firstCompleted ? "Todo listo" : "Faltan campos requeridos")}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* BOTONES */}
-                      <div className="controls-actions">
-                        <button className="btn-secondary" onClick={() => {
-                          setOriginCountry("");
-                          setOriginCity("");
-                          setDestCountry("");
-                          setDestCity("");
-                          setRoundTrip(false);
-                          setDepartureDate("");
-                          setDepartureTime("");
-                          setReturnDate("");
-                          setReturnTime("");
-                        }}>Limpiar todo</button>
-
-                        <button
-                          className="btn-cta"
-                          disabled={!firstCompleted}
-                          onClick={() => {
-                            setRouteConfirmed(true);
-                            setActiveTab(1);
-                          }}
-                        >
-                          Confirmar ruta →
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* TAB 1 - MAPAS */}
-                {activeTab === 1 && (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 18 }}>
-                    <div className="card map2d-card">
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <h4 style={{ margin: 0 }}>Mapa 2D</h4>
-                        <div className="muted">Arrastra o haz zoom para inspeccionar la ruta</div>
-                      </div>
-
-                      <div className="map-inner" style={{ marginTop: 8 }}>
-                        {originCoords && destCoords ? (
-                          <FlightMap2D
-                            origin={originCoords}
-                            destination={destCoords}
-                            drawSpeed={8}
-                            planeSpeed={2.4}
-                            steps={240}
-                            strokeColor="#0ea5a4"
-                            strokeWidth={4}
-                            height="260px"
-                            key={`2d_${originCoords.join(",")}_${destCoords.join(",")}`}
-                          />
-                        ) : (
-                          <div style={{ height: '260px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc', color: '#64748b' }}>
-                            Completa los campos de origen y destino para ver el mapa
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 420px", gap: 18 }}>
-                      <div className="card map-card">
-                        <h4 style={{ margin: 0, marginBottom: 8 }}>Mapa de recorrido</h4>
-                        <div className="map-inner" style={{ height: 220 }}>
-                          {originCoords && destCoords ? (
-                            <FlightMap
-                              origin={originCoords}
-                              destination={destCoords}
-                              drawSpeed={12}
-                              planeSpeed={3}
-                              particlesCount={18}
-                              startPlaneBeforeComplete={false}
-                              key={`${originCoords.join(",")}_${destCoords.join(",")}`}
-                            />
-                          ) : (
-                            <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc', color: '#64748b' }}>
-                              Completa los campos de origen y destino para ver el mapa 3D
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="card viewer-card">
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <h4 style={{ margin: 0 }}>Avión 3D</h4>
-                          <div className="muted">Interactúa con el modelo</div>
-                        </div>
-                        <div className="viewer-body" style={{ marginTop: 8 }}>
-                          <PlaneViewer modelPath="/models/boeing787.glb" envPath="/models/env.hdr" height="220px" />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* BOTONES MAPAS */}
-                    <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12, gap: 8 }}>
-                      <button className="btn-secondary" onClick={() => setActiveTab(0)}>Volver</button>
-                      <button
-                        className="btn-cta"
-                        onClick={() => {
-                          setRouteConfirmed(true);
-                          setActiveTab(2);
-                        }}
-                      >
-                        Confirmar y desbloquear asientos →
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* TAB 2 - ASIENTOS */}
-                {activeTab === 2 && (
-                  <div className="card seats-card">
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <div>
-                        <h3 className="card-title" style={{ margin: 0 }}>Mapa de asientos</h3>
-                        <div className="muted" style={{ marginTop: 6 }}>Selecciona tu asiento</div>
-                      </div>
-                      <div className="seat-legend" aria-hidden>
-                        <div><span className="legend-box available" /> Disponible</div>
-                        <div><span className="legend-box selected" /> Seleccionado</div>
-                        <div><span className="legend-box occupied" /> Ocupado</div>
-                      </div>
-                    </div>
-
-                    <div style={{ marginTop: 12 }}>
-                      <SeatSelector onSelect={(s) => setSelectedSeat(s)} />
-                    </div>
-
-                    {/* BOTONES ASIENTOS */}
-                    <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 12 }}>
-                      <button className="btn-secondary" onClick={() => setActiveTab(1)}>Volver a mapas</button>
-                      <button className="btn-cta" disabled={!selectedSeat} onClick={() => alert(`¡Reserva completada! Has seleccionado el asiento ${selectedSeat.id} para tu vuelo de ${originCity} a ${destCity}`)}>
-                        Confirmar reserva →
-                      </button>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           </section>
