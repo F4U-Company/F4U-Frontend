@@ -40,18 +40,20 @@ api.interceptors.request.use(
   (config) => {
     // Endpoints públicos que NO necesitan token
     const publicEndpoints = [
-      '/api/test/',
-      '/api/health/',
-      '/actuator/',
-      '/api/flights/',
-      '/api/cities/',
-      '/api/reservations/',
-      '/api/debug/public'  // Debug público
+      '/api/test',
+      '/api/health',
+      '/actuator',
+      '/api/flights',
+      '/api/cities',
+      '/api/seats',
+      '/api/seat-locks',
+      '/api/reservations',
+      '/api/debug/public'
     ];
     
-    // Verificar si la URL es un endpoint público
+    // Verificar si la URL es un endpoint público (sin trailing slash)
     const isPublicEndpoint = publicEndpoints.some(endpoint => 
-      config.url.includes(endpoint)
+      config.url.startsWith(endpoint)
     );
     
     // Solo agregar el token si NO es un endpoint público
