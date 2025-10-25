@@ -2,7 +2,30 @@
 import axios from 'axios';
 
 // URL base del backend - cambiar según el entorno
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+// En producción, si VITE_API_URL no está definida, usar la URL de Azure
+const getApiBaseUrl = () => {
+  // Primero intentar con la variable de entorno de Vite
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  
+  // Si estamos en producción (hostname contiene azurestaticapps.net)
+  if (window.location.hostname.includes('azurestaticapps.net')) {
+    return 'https://backend-f4u-cyavghdvh3eyh5bc.brazilsouth-01.azurewebsites.net';
+  }
+  
+  // Por defecto, usar localhost para desarrollo
+  return 'http://localhost:8080';
+};
+
+const API_BASE_URL = getApiBaseUrl();
+
+// Log para debugging
+console.log('🔧 API Configuration:', {
+  hostname: window.location.hostname,
+  API_BASE_URL,
+  VITE_API_URL: import.meta.env.VITE_API_URL
+});
 
 // Crear instancia de axios
 const api = axios.create({
@@ -21,6 +44,7 @@ api.interceptors.request.use(
       '/api/health/',
       '/actuator/',
       '/api/flights/',
+      '/api/cities/',
       '/api/reservations/',
       '/api/debug/public'  // Debug público
     ];
