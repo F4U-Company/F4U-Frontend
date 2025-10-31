@@ -47,7 +47,6 @@ api.interceptors.request.use(
       '/api/cities',
       '/api/seats',
       '/api/seat-locks',
-      '/api/reservations',
       '/api/debug/public'
     ];
     
@@ -147,6 +146,10 @@ export const flightAPI = {
 export const reservationAPI = {
   // Crear reserva
   createReservation: (data) => api.post('/api/reservations', data),
+  // Intentar (re)bloquear asiento justo antes de confirmar
+  tryLock: (seatId, userId) => api.post(`/api/reservations/try-lock/${seatId}`, userId ? userId : null, {
+    headers: { 'Content-Type': 'application/json' }
+  }),
   
   // Obtener reservas del usuario
   getUserReservations: () => api.get('/api/reservations/user'),

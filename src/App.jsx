@@ -1081,6 +1081,21 @@ export default function App() {
 
                         try {
                           const { reservationAPI } = await import('./services/api');
+                          // Asegurar que tenemos userId de sesión para el lock
+                          const userId = sessionStorage.getItem('userSessionId') || 'user-' + Math.random().toString(36).substr(2,9);
+                          sessionStorage.setItem('userSessionId', userId);
+                          
+                          // Intentar/renovar el lock justo antes de confirmar
+                          try {
+                            await reservationAPI.tryLock(selectedSeat.dbId, userId);
+                            // Si responde 200, el asiento queda bloqueado para esta sesión
+                          } catch (e) {
+                            if (e.response?.status === 409) {
+                              alert('Este asiento está siendo reservado por otro usuario. Por favor selecciona otro.');
+                              return;
+                            }
+                            // Si otro error, continuar y que backend valide
+                          }
                           
                           // Preparar datos de la reserva
                           const reservationData = {
@@ -1110,11 +1125,11 @@ export default function App() {
                           
                         } catch (error) {
                           console.error('❌ Error al confirmar reserva:', error);
-                          
-                          if (error.response?.status === 400) {
-                            alert('Error: El asiento ya está ocupado o no está bloqueado. Por favor intenta nuevamente.');
-                          } else if (error.response?.data?.message) {
-                            alert(`Error al confirmar la reserva: ${error.response.data.message}`);
+                          const msg = typeof error.response?.data === 'string' ? error.response.data : error.response?.data?.message;
+                          if (error.response?.status === 409) {
+                            alert(`No se pudo confirmar: ${msg || 'el asiento no está disponible en este momento.'}`);
+                          } else if (error.response?.status === 400) {
+                            alert(`Error: ${msg || 'El asiento ya está ocupado o no está bloqueado.'}`);
                           } else {
                             alert('Ocurrió un error al confirmar la reserva. Por favor intenta nuevamente.');
                           }
