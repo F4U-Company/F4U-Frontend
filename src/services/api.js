@@ -144,18 +144,18 @@ export const flightAPI = {
 
 // ============ RESERVATION ENDPOINTS ============
 export const reservationAPI = {
-  // Crear reserva
-  createReservation: (data) => api.post('/api/reservations', data),
+  // Crear reserva (tabla 'reservaciones')
+  createReservation: (data) => api.post('/api/reservaciones', data),
   // Intentar (re)bloquear asiento justo antes de confirmar
-  tryLock: (seatId, userId) => api.post(`/api/reservations/try-lock/${seatId}`, userId ? userId : null, {
+  tryLock: (seatId, userId) => api.post(`/api/reservaciones/try-lock/${seatId}`, userId ? userId : null, {
     headers: { 'Content-Type': 'application/json' }
   }),
   
   // Obtener reservas del usuario
-  getUserReservations: () => api.get('/api/reservations/user'),
+  getUserReservations: () => api.get('/api/reservaciones/user'),
   
   // Cancelar reserva
-  cancelReservation: (id) => api.delete(`/api/reservations/${id}`),
+  cancelReservation: (id) => api.delete(`/api/reservaciones/${id}`),
 };
 
 // ============ CITY ENDPOINTS ============

@@ -7,6 +7,8 @@ import FlightMap from "./components/FlightMap";
 import FlightMap2D from "./components/FlightMap2D";
 import PlaneViewer from "./components/PlaneViewer";
 import SeatSelector from "./components/SeatSelector";
+import ExtrasSelector from "./components/ExtrasSelector";
+import PaymentForm from "./components/PaymentForm";
 import { cityAPI, flightAPI } from "./services/api";
 import "./index.css";
 
@@ -30,6 +32,7 @@ export default function App() {
   const [selectedFlight, setSelectedFlight] = useState(null);
   const [selectedSeat, setSelectedSeat] = useState(null);
   const [lockedSeatId, setLockedSeatId] = useState(null); // ID del asiento bloqueado
+  const [selectedExtras, setSelectedExtras] = useState(null); // Extras seleccionados
 
   // Estados para ciudades desde la base de datos
   const [cities, setCities] = useState([]);
@@ -168,13 +171,31 @@ export default function App() {
         return;
       }
       setActiveTab(3);
+      return;
+    }
+    if (tabIndex === 4) {
+      if (!selectedExtras) {
+        alert("Por favor confirma tus extras primero");
+        return;
+      }
+      setActiveTab(4);
+      return;
+    }
+    if (tabIndex === 5) {
+      if (!selectedExtras) {
+        alert("Por favor completa todos los pasos previos");
+        return;
+      }
+      setActiveTab(5);
     }
   };
 
   const firstStatusText = firstCompleted ? "Completado" : samePlace ? "Origen y destino iguales" : "Completa los campos requeridos";
   const secondStatusText = selectedFlight ? `Vuelo: ${selectedFlight.numeroVuelo}` : "Selecciona un vuelo";
-  const thirdStatusText = routeConfirmed ? "Asiento confirmado" : "Selecciona tu asiento";
-  const fourthStatusText = routeConfirmed ? "Ruta confirmada" : "Confirma la ruta";
+  const thirdStatusText = selectedSeat ? "Asiento confirmado" : "Selecciona tu asiento";
+  const fourthStatusText = selectedExtras ? "Extras confirmados" : "Configura tus extras";
+  const fifthStatusText = "Ver ruta en el mapa";
+  const sixthStatusText = "Completa el pago";
 
   // Funciones existentes de la website
   function submit(e) {
@@ -665,8 +686,18 @@ export default function App() {
                     </button>
 
                     <button className={`tab ${activeTab === 3 ? "active" : ""} ${!selectedSeat ? "locked" : ""}`} onClick={() => tryOpenTab(3)}>
-                      <div className="tab-title">4. Mapas</div>
+                      <div className="tab-title">4. Extras</div>
                       <div className="tab-meta">{fourthStatusText}</div>
+                    </button>
+
+                    <button className={`tab ${activeTab === 4 ? "active" : ""} ${!selectedExtras ? "locked" : ""}`} onClick={() => tryOpenTab(4)}>
+                      <div className="tab-title">5. Mapas</div>
+                      <div className="tab-meta">{fifthStatusText}</div>
+                    </button>
+
+                    <button className={`tab ${activeTab === 5 ? "active" : ""} ${!selectedExtras ? "locked" : ""}`} onClick={() => tryOpenTab(5)}>
+                      <div className="tab-title">6. Pago</div>
+                      <div className="tab-meta">{sixthStatusText}</div>
                     </button>
                   </div>
                 </div>
@@ -962,7 +993,7 @@ export default function App() {
                         setActiveTab(1);
                       }}>Volver a vuelos</button>
                       <button className="btn-cta" disabled={!selectedSeat} onClick={async () => {
-                        // Bloquear el asiento al continuar a mapas
+                        // Bloquear el asiento al continuar a extras
                         if (selectedSeat && selectedSeat.dbId) {
                           try {
                             const { seatLockAPI } = await import('./services/api');
@@ -973,7 +1004,6 @@ export default function App() {
                             const response = await seatLockAPI.lockSeat(selectedSeat.dbId, userId);
                             if (response.data.success) {
                               setLockedSeatId(selectedSeat.dbId);
-                              setRouteConfirmed(true);
                               setActiveTab(3);
                               console.log('✅ Asiento bloqueado por 15 minutos');
                             } else {
@@ -984,9 +1014,31 @@ export default function App() {
                             alert('No se pudo bloquear el asiento. Por favor intenta de nuevo.');
                           }
                         } else {
-                          setRouteConfirmed(true);
                           setActiveTab(3);
                         }
+                      }}>
+                        Continuar a extras →
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 3 - EXTRAS */}
+                {activeTab === 3 && (
+                  <div className="card extras-card">
+                    <ExtrasSelector 
+                      selectedSeat={selectedSeat}
+                      onExtrasChange={(extras) => setSelectedExtras(extras)}
+                    />
+
+                    {/* BOTONES EXTRAS */}
+                    <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 20 }}>
+                      <button className="btn-secondary" onClick={() => {
+                        setActiveTab(2);
+                      }}>Volver a asientos</button>
+                      <button className="btn-cta" onClick={() => {
+                        setRouteConfirmed(true);
+                        setActiveTab(4);
                       }}>
                         Continuar a mapas →
                       </button>
@@ -994,8 +1046,8 @@ export default function App() {
                   </div>
                 )}
 
-                {/* TAB 3 - MAPAS */}
-                {activeTab === 3 && (
+                {/* TAB 4 - MAPAS */}
+                {activeTab === 4 && (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 18 }}>
                     <div className="card map2d-card">
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -1060,25 +1112,45 @@ export default function App() {
                     {/* BOTONES MAPAS */}
                     <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12, gap: 8 }}>
                       <button className="btn-secondary" onClick={async () => {
-                        // Si hay un asiento bloqueado, liberarlo al volver
-                        if (lockedSeatId) {
-                          try {
-                            const { seatLockAPI } = await import('./services/api');
-                            await seatLockAPI.releaseLock(lockedSeatId);
-                            setLockedSeatId(null);
-                            console.log('🔓 Asiento desbloqueado al volver');
-                          } catch (error) {
-                            console.error('Error al liberar bloqueo:', error);
-                          }
-                        }
-                        setActiveTab(2);
-                      }}>Volver a asientos</button>
-                      <button className="btn-cta" onClick={async () => {
+                        setActiveTab(3);
+                      }}>Volver a extras</button>
+                      <button className="btn-cta" onClick={() => {
+                        // Solo avanzar al tab de pagos, NO crear la reserva aquí
                         if (!selectedFlight || !selectedSeat) {
                           alert('Por favor selecciona un vuelo y un asiento');
                           return;
                         }
+                        setActiveTab(5); // Ir a Pagos
+                      }}>
+                        Continuar a pago →
+                      </button>
+                    </div>
+                  </div>
+                )}
 
+                {/* TAB 5 - PAGOS */}
+                {activeTab === 5 && (
+                  <div className="tab-content">
+                    {/* Helper para calcular precio de extras según clase */}
+                    {(() => {})()}
+                    <PaymentForm
+                      selectedFlight={selectedFlight}
+                      selectedSeat={selectedSeat}
+                      extrasSeleccionados={selectedExtras}
+                      precioTotal={(() => {
+                        const base = Number(selectedSeat?.precio || 0);
+                        const clase = selectedSeat?.clase;
+                        const ex = selectedExtras || {};
+                        if (clase === 'PRIMERA_CLASE') return base; // todos incluidos
+                        let extras = 0;
+                        if (ex.maletaCabina) extras += 25000;
+                        if (ex.maletaBodega && clase !== 'EJECUTIVA') extras += 45000; // en ejecutiva incluido
+                        if (ex.seguro50) extras += 35000;
+                        if (ex.seguro100) extras += 60000;
+                        if (ex.asistenciaEspecial) extras += 50000;
+                        return base + extras;
+                      })()}
+                      onConfirmPayment={async (paymentData) => {
                         try {
                           const { reservationAPI } = await import('./services/api');
                           // Asegurar que tenemos userId de sesión para el lock
@@ -1088,24 +1160,53 @@ export default function App() {
                           // Intentar/renovar el lock justo antes de confirmar
                           try {
                             await reservationAPI.tryLock(selectedSeat.dbId, userId);
-                            // Si responde 200, el asiento queda bloqueado para esta sesión
                           } catch (e) {
                             if (e.response?.status === 409) {
                               alert('Este asiento está siendo reservado por otro usuario. Por favor selecciona otro.');
                               return;
                             }
-                            // Si otro error, continuar y que backend valide
                           }
                           
-                          // Preparar datos de la reserva
+                          // Preparar datos completos de la reserva
+                          // Calcular precioExtras con reglas de clase
+                          const calcPrecioExtras = (() => {
+                            const clase = selectedSeat.clase;
+                            const ex = selectedExtras || {};
+                            if (clase === 'PRIMERA_CLASE') return 0;
+                            let extras = 0;
+                            if (ex.maletaCabina) extras += 25000;
+                            if (ex.maletaBodega && clase !== 'EJECUTIVA') extras += 45000;
+                            if (ex.seguro50) extras += 35000;
+                            if (ex.seguro100) extras += 60000;
+                            if (ex.asistenciaEspecial) extras += 50000;
+                            return extras;
+                          })();
+
                           const reservationData = {
-                            flightId: selectedFlight.id,
-                            seatId: selectedSeat.dbId,
-                            passengerName: accounts[0]?.name || 'Usuario',
-                            passengerEmail: accounts[0]?.username || 'usuario@ejemplo.com'
+                            vueloId: selectedFlight.id,
+                            asientoId: selectedSeat.dbId,
+                            pasajeroNombre: paymentData.nombre,
+                            pasajeroApellido: paymentData.apellido,
+                            pasajeroEmail: paymentData.email,
+                            pasajeroTelefono: paymentData.telefono,
+                            pasajeroDocumentoTipo: paymentData.documentoTipo,
+                            pasajeroDocumentoNumero: paymentData.documentoNumero,
+                            pasajeroFechaNacimiento: paymentData.fechaNacimiento,
+                            clase: selectedSeat.clase,
+                            precioAsiento: selectedSeat.precio,
+                            precioExtras: calcPrecioExtras,
+                            precioTotal: Number(selectedSeat?.precio || 0) + calcPrecioExtras,
+                            extraMaletaCabina: selectedSeat.clase === 'PRIMERA_CLASE' ? true : (selectedExtras?.maletaCabina || false),
+                            extraMaletaBodega: selectedSeat.clase === 'PRIMERA_CLASE' || selectedSeat.clase === 'EJECUTIVA' ? true : (selectedExtras?.maletaBodega || false),
+                            extraSeguro50: selectedSeat.clase === 'PRIMERA_CLASE' ? true : (selectedExtras?.seguro50 || false),
+                            extraSeguro100: selectedSeat.clase === 'PRIMERA_CLASE' ? true : (selectedExtras?.seguro100 || false),
+                            extraAsistenciaEspecial: selectedSeat.clase === 'PRIMERA_CLASE' ? true : (selectedExtras?.asistenciaEspecial || false),
+                            metodoPago: paymentData.metodoPago,
+                            estadoPago: 'APROBADO',
+                            estado: 'CONFIRMADA'
                           };
 
-                          console.log('📤 Enviando reserva:', reservationData);
+                          console.log('📤 Enviando reserva completa:', reservationData);
                           
                           // Crear la reserva (esto marca el asiento como ocupado en la BD)
                           const response = await reservationAPI.createReservation(reservationData);
@@ -1118,10 +1219,18 @@ export default function App() {
                           // Mostrar confirmación
                           const originCityName = cities.find(c => c.id === Number(originCity))?.nombre || 'origen';
                           const destCityName = cities.find(c => c.id === Number(destCity))?.nombre || 'destino';
-                          alert(`¡Reserva confirmada exitosamente! 🎉\n\nVuelo: ${selectedFlight.numeroVuelo}\nAsiento: ${selectedSeat.id}\nRuta: ${originCityName} → ${destCityName}\n\nTu asiento ha sido confirmado y marcado como ocupado.`);
+                          alert(`¡Reserva confirmada exitosamente! 🎉\n\nCódigo de reserva: ${response.data.codigoReservacion || 'Generando...'}\nVuelo: ${selectedFlight.numeroVuelo}\nAsiento: ${selectedSeat.id}\nRuta: ${originCityName} → ${destCityName}\n\nRecibirás un correo de confirmación en: ${paymentData.email}`);
                           
-                          // Opcional: resetear el formulario o redirigir
-                          // setActiveTab(0);
+                          // Resetear el formulario
+                          setActiveTab(0);
+                          setSelectedFlight(null);
+                          setSelectedSeat(null);
+                          setSelectedExtras(null);
+                          setOriginCity("");
+                          setDestCity("");
+                          setDepartureDate("");
+                          setReturnDate("");
+                          setRouteConfirmed(false);
                           
                         } catch (error) {
                           console.error('❌ Error al confirmar reserva:', error);
@@ -1133,11 +1242,11 @@ export default function App() {
                           } else {
                             alert('Ocurrió un error al confirmar la reserva. Por favor intenta nuevamente.');
                           }
+                          throw error;
                         }
-                      }}>
-                        Confirmar reserva →
-                      </button>
-                    </div>
+                      }}
+                      onBack={() => setActiveTab(4)}
+                    />
                   </div>
                 )}
               </div>
