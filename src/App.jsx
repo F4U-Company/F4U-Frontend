@@ -10,7 +10,7 @@ import SeatSelector from "./components/SeatSelector";
 import ExtrasSelector from "./components/ExtrasSelector";
 import PaymentForm from "./components/PaymentForm";
 import { cityAPI, flightAPI } from "./services/api";
-import "./index.css";
+import "./styles/mainStyles/index.css";
 
 export default function App() {
   const [email, setEmail] = useState("");
@@ -188,6 +188,14 @@ export default function App() {
       }
       setActiveTab(5);
     }
+    if (tabIndex === 6) {
+      if (!isAuthenticated) {
+        alert("Por favor inicia sesión para acceder a tu experiencia personalizada");
+        return;
+      }
+      setActiveTab(6);
+      return;
+    }
   };
 
   const firstStatusText = firstCompleted ? "Completado" : samePlace ? "Origen y destino iguales" : "Completa los campos requeridos";
@@ -196,6 +204,7 @@ export default function App() {
   const fourthStatusText = selectedExtras ? "Extras confirmados" : "Configura tus extras";
   const fifthStatusText = "Ver ruta en el mapa";
   const sixthStatusText = "Completa el pago";
+  const seventhStatusText = isAuthenticated ? "Experiencia desbloqueada" : "Inicia sesión para acceder";
 
   // Funciones existentes de la website
   function submit(e) {
@@ -635,7 +644,98 @@ export default function App() {
 
         {/* MAIN */}
         <main id="main-content">
-          {/* NUEVO SISTEMA DE RESERVA CON PESTAÑAS - AHORA AL INICIO */}
+          {/* HERO SECTION CON CARRUSEL */}
+          <section className="hero full-hero">
+            <div className="hero-picture">
+              <div className="hero-carousel">
+                {heroImages.map((image, index) => (
+                  <div 
+                    key={image.id}
+                    className={`hero-slide ${index === heroCurrentImage ? 'active' : ''}`}
+                    style={{ backgroundImage: `url(${image.src})` }}
+                  >
+                    <div className="slide-overlay"></div>
+                    <div className="slide-content">
+                      <h2>{image.title}</h2>
+                      <p>Tu próximo destino te espera</p>
+                    </div>
+                  </div>
+                ))}
+                
+                {/* Indicadores del carrusel hero */}
+                <div className="hero-carousel-indicators">
+                  {heroImages.map((_, index) => (
+                    <button
+                      key={index}
+                      className={`hero-indicator ${heroCurrentImage === index ? 'active' : ''}`}
+                      onClick={() => setHeroCurrentImage(index)}
+                      aria-label={`Ir a imagen ${index + 1}`}
+                    />
+                  ))}
+                </div>
+
+                {/* Controles de navegación */}
+                <button 
+                  className="hero-carousel-prev"
+                  onClick={() => setHeroCurrentImage(prev => prev === 0 ? heroImages.length - 1 : prev - 1)}
+                  aria-label="Imagen anterior"
+                >
+                  ‹
+                </button>
+                <button 
+                  className="hero-carousel-next"
+                  onClick={() => setHeroCurrentImage(prev => (prev + 1) % heroImages.length)}
+                  aria-label="Siguiente imagen"
+                >
+                  ›
+                </button>
+              </div>
+            </div>
+
+            <div className="hero-form-area">
+              <div className="hero-text">
+                <h1 className="hero-title" data-testid="hero-title">
+                  Viaja con<span className="hero-span">F4U</span>
+                </h1>
+                <h2 className="hero-subtitle" data-testid="hero-subtitle">
+                  Descubre el mundo con la aerolínea que pone tus sueños en vuelo. 
+                  Reserva fácil y vuela con la mejor experiencia.
+                </h2>
+
+                <div className="hero-cta">
+                  <button className="learn-btn">Descubre destinos</button>
+                </div>
+              </div>
+
+              <aside className="signup-card" aria-label="Formulario de contacto">
+                <form className="signup-form" onSubmit={submit}>
+                  <h3>¡Ofertas exclusivas!</h3>
+                  <p>Suscríbete y recibe las mejores promociones</p>
+                  <label htmlFor="email-hero" className="sr-only">Correo electrónico</label>
+                  <input
+                    id="email-hero"
+                    type="email"
+                    placeholder="Escribe tu correo electrónico"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="input-email"
+                    required
+                  />
+                  <div className="cta-row">
+                    <button className="apply-btn" type="submit">
+                      Recibir ofertas
+                      <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden className="btn-arrow">
+                        <path d="M5 12h14M13 5l7 7-7 7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                      </svg>
+                    </button>
+                  </div>
+                  <p className="small-note">Sin spam. Solo las mejores ofertas de viajes.</p>
+                </form>
+              </aside>
+            </div>
+          </section>
+
+          {/* SECCIÓN DE RESERVA TU VUELO - AHORA JUSTO ARRIBA DE PROCESO DE RESERVA */}
           <section className="booking-tabs-section" style={{ marginTop: '80px', marginBottom: '40px' }}>
             <div className="booking-tabs-inner">
               {/* TÍTULO DE LA SECCIÓN */}
@@ -698,6 +798,11 @@ export default function App() {
                     <button className={`tab ${activeTab === 5 ? "active" : ""} ${!selectedExtras ? "locked" : ""}`} onClick={() => tryOpenTab(5)}>
                       <div className="tab-title">6. Pago</div>
                       <div className="tab-meta">{sixthStatusText}</div>
+                    </button>
+
+                    <button className={`tab ${activeTab === 6 ? "active" : ""} ${!isAuthenticated ? "locked" : ""}`} onClick={() => tryOpenTab(6)}>
+                      <div className="tab-title">7. Experiencia</div>
+                      <div className="tab-meta">{seventhStatusText}</div>
                     </button>
                   </div>
                 </div>
@@ -1249,104 +1354,134 @@ export default function App() {
                     />
                   </div>
                 )}
+
+
+                {/* TAB 6 - EXPERIENCIA */}
+                {activeTab === 6 && (
+                  <div className="card experience-card">
+                    <div className="experience-content">
+                      <div className="experience-header">
+                        <div className="experience-icon">
+                          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                            <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                          </svg>
+                        </div>
+                        <h3 className="experience-title">¡Experiencia Premium Desbloqueada!</h3>
+                        <p className="experience-subtitle">
+                          Accede a tu dashboard personalizado para vivir una experiencia de vuelo única
+                        </p>
+                      </div>
+
+                      <div className="experience-features">
+                        <div className="feature-grid">
+                          <div className="feature-item">
+                            <div className="feature-icon">
+                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
+                                <polyline points="7.5 4.21 12 6.81 16.5 4.21"/>
+                                <polyline points="7.5 19.79 7.5 14.6 3 12"/>
+                                <polyline points="21 12 16.5 14.6 16.5 19.79"/>
+                                <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                                <line x1="12" y1="22.08" x2="12" y2="12"/>
+                              </svg>
+                            </div>
+                            <div className="feature-content">
+                              <h4>Seguimiento en Tiempo Real</h4>
+                              <p>Monitorea tu vuelo, estado del equipaje y conexiones en vivo</p>
+                            </div>
+                          </div>
+
+                          <div className="feature-item">
+                            <div className="feature-icon">
+                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <path d="M12 6v6l4 2"/>
+                              </svg>
+                            </div>
+                            <div className="feature-content">
+                              <h4>Alertas Inteligentes</h4>
+                              <p>Notificaciones proactivas sobre cambios y oportunidades</p>
+                            </div>
+                          </div>
+
+                          <div className="feature-item">
+                            <div className="feature-icon">
+                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                                <circle cx="9" cy="7" r="4"/>
+                                <path d="M23 21v-2a4 4 0 00-3-3.87"/>
+                                <path d="M16 3.13a4 4 0 010 7.75"/>
+                              </svg>
+                            </div>
+                            <div className="feature-content">
+                              <h4>Asistencia Personal 24/7</h4>
+                              <p>Tu equipo de soporte dedicado durante todo el viaje</p>
+                            </div>
+                          </div>
+
+                          <div className="feature-item">
+                            <div className="feature-icon">
+                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+                                <polyline points="22 4 12 14.01 9 11.01"/>
+                              </svg>
+                            </div>
+                            <div className="feature-content">
+                              <h4>Recompensas Exclusivas</h4>
+                              <p>Acceso a upgrades, lounges y beneficios por lealtad</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="experience-cta">
+                        <div className="cta-content">
+                          <h4>Tu viaje, tu experiencia</h4>
+                          <p>
+                            Descubre un mundo de comodidades diseñadas especialmente para ti. 
+                            Desde el momento de tu reserva hasta que pisas tu destino, 
+                            cada detalle está cuidado para hacer de tu viaje una experiencia memorable.
+                          </p>
+                        </div>
+                        <button 
+                          className="experience-btn"
+                          onClick={() => window.location.href = '/dashboard'}
+                        >
+                          <span>Acceder a Mi Dashboard</span>
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                          </svg>
+                        </button>
+                      </div>
+
+                      <div className="experience-footer">
+                        <div className="security-badge">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                          </svg>
+                          <span>Experiencia 100% segura y personalizada</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* BOTONES EXPERIENCIA */}
+                    <div style={{ display: "flex", justifyContent: "space-between", marginTop: "24px", gap: "8px" }}>
+                      <button className="btn-secondary" onClick={() => setActiveTab(5)}>
+                        ← Volver a pagos
+                      </button>
+                      <button className="btn-secondary" onClick={() => setActiveTab(0)}>
+                        Nueva reserva
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
               {/* Cierre del contenedor flex principal */}
             </div>
             </div>
           </section>
 
-          {/* HERO SECTION CON CARRUSEL */}
-          <section className="hero full-hero">
-            <div className="hero-picture">
-              <div className="hero-carousel">
-                {heroImages.map((image, index) => (
-                  <div 
-                    key={image.id}
-                    className={`hero-slide ${index === heroCurrentImage ? 'active' : ''}`}
-                    style={{ backgroundImage: `url(${image.src})` }}
-                  >
-                    <div className="slide-overlay"></div>
-                    <div className="slide-content">
-                      <h2>{image.title}</h2>
-                      <p>Tu próximo destino te espera</p>
-                    </div>
-                  </div>
-                ))}
-                
-                {/* Indicadores del carrusel hero */}
-                <div className="hero-carousel-indicators">
-                  {heroImages.map((_, index) => (
-                    <button
-                      key={index}
-                      className={`hero-indicator ${heroCurrentImage === index ? 'active' : ''}`}
-                      onClick={() => setHeroCurrentImage(index)}
-                      aria-label={`Ir a imagen ${index + 1}`}
-                    />
-                  ))}
-                </div>
-
-                {/* Controles de navegación */}
-                <button 
-                  className="hero-carousel-prev"
-                  onClick={() => setHeroCurrentImage(prev => prev === 0 ? heroImages.length - 1 : prev - 1)}
-                  aria-label="Imagen anterior"
-                >
-                  ‹
-                </button>
-                <button 
-                  className="hero-carousel-next"
-                  onClick={() => setHeroCurrentImage(prev => (prev + 1) % heroImages.length)}
-                  aria-label="Siguiente imagen"
-                >
-                  ›
-                </button>
-              </div>
-            </div>
-
-            <div className="hero-form-area">
-              <div className="hero-text">
-                <h1 className="hero-title" data-testid="hero-title">
-                  Viaja con<span className="hero-span">F4U</span>
-                </h1>
-                <h2 className="hero-subtitle" data-testid="hero-subtitle">
-                  Descubre el mundo con la aerolínea que pone tus sueños en vuelo. 
-                  Reserva fácil y vuela con la mejor experiencia.
-                </h2>
-
-                <div className="hero-cta">
-                  <button className="learn-btn">Descubre destinos</button>
-                </div>
-              </div>
-
-              <aside className="signup-card" aria-label="Formulario de contacto">
-                <form className="signup-form" onSubmit={submit}>
-                  <h3>¡Ofertas exclusivas!</h3>
-                  <p>Suscríbete y recibe las mejores promociones</p>
-                  <label htmlFor="email-hero" className="sr-only">Correo electrónico</label>
-                  <input
-                    id="email-hero"
-                    type="email"
-                    placeholder="Escribe tu correo electrónico"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="input-email"
-                    required
-                  />
-                  <div className="cta-row">
-                    <button className="apply-btn" type="submit">
-                      Recibir ofertas
-                      <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden className="btn-arrow">
-                        <path d="M5 12h14M13 5l7 7-7 7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                      </svg>
-                    </button>
-                  </div>
-                  <p className="small-note">Sin spam. Solo las mejores ofertas de viajes.</p>
-                </form>
-              </aside>
-            </div>
-          </section>
-
-          {/* NUEVA SECCIÓN DE PASOS MEJORADA - COMPACTA */}
+          {/* NUEVA SECCIÓN DE PASOS MEJORADA - COMPACTA - AHORA JUSTO DEBAJO DE RESERVA TU VUELO */}
           <section id="cdt-mechanics-2" className="booking-steps-section">
             <div className="booking-steps-inner">
               <div className="booking-steps-header">

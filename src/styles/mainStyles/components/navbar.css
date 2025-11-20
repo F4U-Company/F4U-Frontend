@@ -1,0 +1,272 @@
+/* ==========================
+   HEADER MEJORADO Y DINÁMICO
+   ========================== */
+.site-header{
+  padding: 16px 20px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: linear-gradient(135deg, #1a2b4c 0%, #2d3b5a 100%);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transform: translateY(0);
+}
+
+.site-header.hidden {
+  transform: translateY(-100%);
+}
+
+.site-header.visible {
+  transform: translateY(0);
+}
+
+.header-inner{
+  max-width:var(--max-w);
+  margin:0 auto;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+
+/* Usuario en el header */
+.header-user {
+  position: relative;
+}
+
+.header-user .user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.header-user .user-info:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.header-user .user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #06b6d4 0%, #7c3aed 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.header-user .user-details {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.header-user .user-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: white;
+  line-height: 1.2;
+}
+
+.header-user .dropdown-icon {
+  transition: transform 0.2s;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.header-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  width: 280px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  z-index: 1001;
+  overflow: hidden;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.header-dropdown-menu .menu-header {
+  padding: 1.25rem;
+  background: linear-gradient(135deg, #06b6d4 0%, #7c3aed 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.header-dropdown-menu .menu-user-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.5rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.header-dropdown-menu .menu-user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.header-dropdown-menu .menu-user-name {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header-dropdown-menu .menu-user-email {
+  font-size: 0.8125rem;
+  opacity: 0.9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header-dropdown-menu .menu-divider {
+  height: 1px;
+  background: #e2e8f0;
+}
+
+.header-dropdown-menu .menu-item {
+  width: 100%;
+  padding: 0.875rem 1.25rem;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9375rem;
+  color: #334155;
+  transition: background-color 0.2s;
+}
+
+.header-dropdown-menu .menu-item:hover {
+  background-color: #f8fafc;
+}
+
+.header-dropdown-menu .menu-item.logout {
+  color: #dc2626;
+}
+
+.header-dropdown-menu .menu-item.logout:hover {
+  background-color: #fee2e2;
+}
+
+.header-dropdown-menu .menu-icon {
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+}
+
+/* Navegación mejorada - TEXTO BLANCO */
+.main-nav{
+  display:flex;
+  gap: 32px;
+}
+
+.main-nav a{
+  font-weight:600;
+  color: white;
+  text-decoration:none;
+  position: relative;
+  padding: 8px 0;
+  transition: all 0.3s ease;
+  font-size: 15px;
+}
+
+.main-nav a::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--blue);
+  transition: width 0.3s ease;
+}
+
+.main-nav a:hover {
+  color: var(--blue-light);
+}
+
+.main-nav a:hover::after {
+  width: 100%;
+}
+
+/* Logo F4U - Tipografía empresarial en BLANCO */
+.logo-container {
+  display: flex;
+  align-items: center;
+}
+
+.logo-text {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 900;
+  font-size: 28px;
+  background: linear-gradient(135deg, #ffffff, #e6f2ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.5px;
+  text-transform: uppercase;
+}
+
+/* Responsive para navbar */
+@media (max-width: 768px) {
+  .main-nav {
+    gap: 15px;
+  }
+  .main-nav a {
+    font-size: 14px;
+  }
+  .logo-text {
+    font-size: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-nav {
+    gap: 12px;
+  }
+  .main-nav a {
+    font-size: 13px;
+  }
+  .logo-text {
+    font-size: 22px;
+  }
+}

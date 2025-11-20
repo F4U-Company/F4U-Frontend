@@ -1,8 +1,10 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { PublicClientApplication, EventType } from "@azure/msal-browser";
 import { MsalProvider } from "@azure/msal-react";
 import App from "./App";
+import Dashboard from "./dashboard";
 import { msalConfig } from "./authConfig";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./index.css";
@@ -35,11 +37,16 @@ msalInstance.initialize().then(() => {
     }
   });
 
-  // Renderizar la aplicación
+  // Renderizar la aplicación con React Router
   ReactDOM.createRoot(document.getElementById("root")).render(
     <React.StrictMode>
       <MsalProvider instance={msalInstance}>
-        <App />
+        <Router>
+          <Routes>
+            <Route path="/" element={<App />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+          </Routes>
+        </Router>
       </MsalProvider>
     </React.StrictMode>
   );

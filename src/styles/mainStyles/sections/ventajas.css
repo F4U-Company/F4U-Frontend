@@ -1,0 +1,331 @@
+/* ==========================
+   SECCIÓN BENEFICIOS F4U MEJORADA - VENTAJAS EXCLUSIVAS
+   ========================== */
+.f4u-benefits-section {
+  padding: 80px 20px;
+  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+  position: relative;
+}
+
+.f4u-benefits-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0,102,204,0.1), transparent);
+}
+
+.f4u-benefits-inner {
+  max-width: var(--max-w);
+  margin: 0 auto;
+}
+
+.benefits-header {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.benefits-title {
+  font-size: 42px;
+  font-weight: 800;
+  margin-bottom: 16px;
+  line-height: 1.1;
+}
+
+.f4u-gradient {
+  background: linear-gradient(135deg, var(--blue), var(--blue-2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.benefits-subtitle {
+  font-size: 18px;
+  color: var(--muted);
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.benefits-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+  margin-bottom: 60px;
+}
+
+.benefit-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 30px;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border: 1px solid rgba(17,17,17,0.05);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.06);
+  display: flex;
+  flex-direction: column;
+}
+
+.benefit-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--blue), var(--blue-2));
+  transform: scaleX(0);
+  transition: transform 0.4s ease;
+}
+
+.benefit-card.active::before {
+  transform: scaleX(1);
+}
+
+.benefit-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+}
+
+.benefit-card.active {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 35px rgba(0,102,204,0.15);
+}
+
+.benefit-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  position: relative;
+  z-index: 2;
+}
+
+.benefit-icon-wrapper {
+  flex-shrink: 0;
+}
+
+.benefit-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--blue), var(--blue-2));
+  color: white;
+  transition: all 0.4s ease;
+}
+
+.benefit-card:nth-child(1) .benefit-icon {
+  background: linear-gradient(135deg, var(--blue), var(--blue-2));
+}
+
+.benefit-card:nth-child(2) .benefit-icon {
+  background: linear-gradient(135deg, var(--teal), #00c2a8);
+}
+
+.benefit-card:nth-child(3) .benefit-icon {
+  background: linear-gradient(135deg, var(--orange), #ff8c42);
+}
+
+.benefit-card:nth-child(4) .benefit-icon {
+  background: linear-gradient(135deg, var(--purple), #9d7acc);
+}
+
+.benefit-card:nth-child(5) .benefit-icon {
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+}
+
+.benefit-card:nth-child(6) .benefit-icon {
+  background: linear-gradient(135deg, #FF6B6B, #FF8E8E);
+}
+
+.benefit-card.active .benefit-icon {
+  transform: scale(1.1) rotate(5deg);
+}
+
+.benefit-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.benefit-content {
+  flex: 1;
+  text-align: left;
+}
+
+.benefit-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: #111;
+  line-height: 1.3;
+}
+
+.benefit-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.benefit-body.show {
+  max-height: 200px;
+}
+
+.benefit-body p {
+  color: var(--muted);
+  line-height: 1.6;
+  font-size: 15px;
+  margin: 0;
+  padding-right: 20px;
+}
+
+.benefit-arrow {
+  flex-shrink: 0;
+  color: var(--muted-light);
+  transition: all 0.3s ease;
+  margin-top: 5px;
+}
+
+.benefit-card.active .benefit-arrow {
+  color: var(--blue);
+  transform: rotate(180deg);
+}
+
+.benefit-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(0,102,204,0.02) 0%, transparent 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 1;
+}
+
+.benefit-card.active .benefit-background {
+  opacity: 1;
+}
+
+.benefits-cta {
+  text-align: center;
+}
+
+.benefits-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, var(--blue), var(--blue-2));
+  color: white;
+  border: none;
+  padding: 16px 32px;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: 0 8px 25px rgba(0,102,204,0.25);
+  transition: all 0.4s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.benefits-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.benefits-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 35px rgba(0,102,204,0.35);
+}
+
+.benefits-button:hover::before {
+  left: 100%;
+}
+
+/* Ajustes para 6 elementos en el grid de beneficios */
+@media (min-width: 1200px) {
+  .benefits-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 1199px) and (min-width: 768px) {
+  .benefits-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  .benefits-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Responsive para ventajas */
+@media (max-width: 768px) {
+  .f4u-benefits-section {
+    padding: 40px 15px;
+  }
+  .benefit-card {
+    padding: 24px;
+  }
+  .benefit-card-header {
+    gap: 16px;
+  }
+  .benefit-icon {
+    width: 50px;
+    height: 50px;
+  }
+  .benefit-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+  .benefit-title {
+    font-size: 18px;
+  }
+  .benefits-title {
+    font-size: 32px;
+  }
+  .benefits-subtitle {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .benefits-title {
+    font-size: 28px;
+  }
+  .benefits-subtitle {
+    font-size: 16px;
+  }
+  .benefits-button {
+    padding: 14px 24px;
+    font-size: 15px;
+  }
+  .benefit-card {
+    padding: 20px;
+  }
+  .benefit-card-header {
+    flex-direction: column;
+    text-align: center;
+    gap: 15px;
+  }
+  .benefit-content {
+    text-align: center;
+  }
+  .benefit-body p {
+    padding-right: 0;
+  }
+}
