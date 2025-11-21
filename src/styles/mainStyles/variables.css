@@ -1,0 +1,267 @@
+/* =============================================
+   VARIABLES CSS GLOBALES - SISTEMA DE DISEÑO F4U
+   ============================================= */
+
+/* ==========================
+   IMPORTACIÓN DE FUENTES
+   ========================== */
+
+/* Fuente empresarial para el logo y títulos */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap');
+
+/* Fuente principal Graphik */
+@font-face {
+  font-family: 'Graphik-Regular';
+  src: url('https://cdn.nubank.com.br/fonts/Graphik/variants/Graphik-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Graphik-Medium';
+  src: url('https://cdn.nubank.com.br/fonts/Graphik/variants/Graphik-Medium.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ==========================
+   PALETA DE COLORES PRINCIPAL
+   ========================== */
+
+:root {
+  /* Azul corporativo (primario) */
+  --blue: #0066CC;
+  --blue-2: #004499;
+  --blue-3: #003377;
+  --blue-light: #e6f2ff;
+  --blue-lighter: #f0f7ff;
+  
+  /* Colores secundarios */
+  --orange: #FF6B35;
+  --orange-light: #fff2e6;
+  --orange-lighter: #fffaf5;
+  
+  --purple: #8B5FBF;
+  --purple-light: #f0e6ff;
+  --purple-lighter: #f8f5ff;
+  
+  --teal: #00A896;
+  --teal-light: #e6f7f5;
+  --teal-lighter: #f0fdfb;
+  
+  /* Colores neutrales */
+  --gray-50: #f8fafc;
+  --gray-100: #f1f5f9;
+  --gray-200: #e2e8f0;
+  --gray-300: #cbd5e1;
+  --gray-400: #94a3b8;
+  --gray-500: #64748b;
+  --gray-600: #475569;
+  --gray-700: #334155;
+  --gray-800: #1e293b;
+  --gray-900: #0f172a;
+  
+  /* Colores semánticos */
+  --success: #10b981;
+  --success-light: #ecfdf5;
+  --warning: #f59e0b;
+  --warning-light: #fffbeb;
+  --error: #ef4444;
+  --error-light: #fef2f2;
+  --info: #3b82f6;
+  --info-light: #eff6ff;
+  
+  /* Texto y fondos */
+  --text-primary: #111111;
+  --text-secondary: rgba(17, 17, 17, 0.72);
+  --text-tertiary: rgba(17, 17, 17, 0.45);
+  --text-white: #ffffff;
+  
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-hero: #e6f2ff;
+  --bg-dark: #1a2b4c;
+  --bg-darker: #0f172a;
+}
+
+/* ==========================
+   VARIABLES DE DISEÑO
+   ========================== */
+
+:root {
+  /* Espaciado y tamaños */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  
+  /* Bordes y radios */
+  --border-radius-sm: 4px;
+  --border-radius: 8px;
+  --border-radius-md: 12px;
+  --border-radius-lg: 16px;
+  --border-radius-xl: 20px;
+  --border-radius-2xl: 24px;
+  --border-radius-full: 9999px;
+  
+  --card-radius: var(--border-radius-xl);
+  
+  /* Sombras */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  
+  /* Tipografía */
+  --font-size-xs: 0.75rem;     /* 12px */
+  --font-size-sm: 0.875rem;    /* 14px */
+  --font-size-base: 1rem;      /* 16px */
+  --font-size-lg: 1.125rem;    /* 18px */
+  --font-size-xl: 1.25rem;     /* 20px */
+  --font-size-2xl: 1.5rem;     /* 24px */
+  --font-size-3xl: 1.875rem;   /* 30px */
+  --font-size-4xl: 2.25rem;    /* 36px */
+  --font-size-5xl: 3rem;       /* 48px */
+  --font-size-6xl: 3.75rem;    /* 60px */
+  --font-size-7xl: 4.5rem;     /* 72px */
+  
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+  --font-weight-black: 900;
+  
+  --line-height-tight: 1.25;
+  --line-height-snug: 1.375;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.625;
+  --line-height-loose: 2;
+}
+
+/* ==========================
+   VARIABLES DE COMPONENTES
+   ========================== */
+
+:root {
+  /* Layout */
+  --max-width: 1200px;
+  --header-height: 80px;
+  --footer-height: auto;
+  
+  /* Z-index escala */
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal-backdrop: 1040;
+  --z-modal: 1050;
+  --z-popover: 1060;
+  --z-tooltip: 1070;
+  --z-toast: 1080;
+  
+  /* Transiciones */
+  --transition-fast: 150ms ease;
+  --transition-normal: 300ms ease;
+  --transition-slow: 500ms ease;
+  --transition-bounce: 500ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  
+  /* Breakpoints (para media queries en JS/CSS) */
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+}
+
+/* ==========================
+   VARIABLES ESPECÍFICAS DE COMPONENTES
+   ========================== */
+
+:root {
+  /* Sistema de reservas */
+  --reservation-step-height: 80px;
+  --reservation-progress-height: 4px;
+  
+  /* Mapa */
+  --map-height: 220px;
+  --map-controls-height: 60px;
+  
+  /* Asientos */
+  --seat-width: 52px;
+  --seat-height: 40px;
+  --seat-gap: 10px;
+  --row-column-min: 150px;
+  --row-column-max: 190px;
+  --seats-height: 240px;
+  --accent: var(--blue);
+  --accent-600: var(--teal);
+  
+  /* Formularios */
+  --input-height: 48px;
+  --input-padding: 12px 16px;
+  --input-border-width: 2px;
+  
+  /* Botones */
+  --btn-height: 48px;
+  --btn-padding: 12px 24px;
+  --btn-border-radius: var(--border-radius-md);
+}
+
+/* ==========================
+   ALIAS PARA COMPATIBILIDAD
+   ========================== */
+
+:root {
+  /* Mantener compatibilidad con código existente */
+  --max-w: var(--max-width);
+  --muted: var(--text-secondary);
+  --muted-light: var(--text-tertiary);
+}
+
+/* ==========================
+   VARIABLES PARA MODO OSCURO (PREPARACIÓN)
+   ========================== */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Estas variables se activarán cuando implementes el modo oscuro */
+    /* --text-primary: #ffffff;
+    --text-secondary: rgba(255, 255, 255, 0.72);
+    --text-tertiary: rgba(255, 255, 255, 0.45);
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b; */
+  }
+}
+
+/* ==========================
+   UTILIDADES DE ACCESIBILIDAD
+   ========================== */
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --transition-fast: 0ms;
+    --transition-normal: 0ms;
+    --transition-slow: 0ms;
+    --transition-bounce: 0ms;
+  }
+}
+
+@media (prefers-contrast: high) {
+  :root {
+    --blue: #0000FF;
+    --blue-2: #0000CC;
+    --text-secondary: #000000;
+    --text-tertiary: #333333;
+  }
+}

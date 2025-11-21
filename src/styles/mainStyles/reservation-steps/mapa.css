@@ -1,0 +1,293 @@
+/* =============================================
+   ESTILOS PARA VISUALIZACIÓN DEL MAPA DE VUELO
+   ============================================= */
+
+/* Variables para consistencia */
+:root {
+  --map-height: 220px; /* altura fija para el globo */
+}
+
+.map-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+  border: 1px solid rgba(17,17,17,0.05);
+}
+
+.map-header {
+  margin-bottom: 20px;
+}
+
+.map-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a2b4c;
+  margin: 0 0 6px 0;
+  letter-spacing: -0.02em;
+}
+
+.map-subtitle {
+  color: var(--muted);
+  font-size: 0.875rem;
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Contenedor del globo: caja, recorte y fondo */
+.globe-container {
+  position: relative;
+  width: 100%;
+  height: var(--map-height); /* CAMBIO IMPORTANTE: usar altura fija en lugar de 100% */
+  border-radius: 12px;
+  overflow: hidden;
+  background-color: #000;
+}
+
+/* Canvas del renderer - forzar contención absoluta */
+.globe-container canvas {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+  border-radius: 12px;
+}
+
+/* Wrapper adicional para mayor seguridad */
+.flight-map-wrapper {
+  position: relative;
+  width: 100%;
+  height: var(--map-height); /* CAMBIO: altura consistente */
+  border-radius: 12px;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* Estados de carga */
+.map-loading-state {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8fafc;
+  color: #64748b;
+  border-radius: 12px;
+  z-index: 2;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.map-loading-text {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Asegurar que .map-inner contenga correctamente */
+.map-inner {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+  height: var(--map-height); /* CAMBIO: altura definida */
+}
+
+/* Refuerzo para el contenedor de mapas */
+.map-card .map-inner {
+  height: var(--map-height); /* CAMBIO: usar variable */
+  width: 100%;
+}
+
+/* Controles del mapa */
+.map-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.map-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.map-route {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a2b4c;
+}
+
+.map-distance {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.map-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.map-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.map-btn:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.map-btn.primary {
+  background: var(--blue);
+  color: white;
+  border-color: var(--blue);
+}
+
+.map-btn.primary:hover {
+  background: var(--blue-2);
+  border-color: var(--blue-2);
+}
+
+/* Leyenda del mapa */
+.map-legend {
+  display: flex;
+  gap: 16px;
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+.legend-color.route {
+  background: var(--blue);
+}
+
+.legend-color.origin {
+  background: #10b981;
+}
+
+.legend-color.destination {
+  background: #ef4444;
+}
+
+/* Vista 2D alternativa */
+.map2d-container {
+  width: 100%;
+  height: var(--map-height);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f8fafc;
+  position: relative;
+}
+
+.map2d-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.map-path {
+  fill: none;
+  stroke: var(--blue);
+  stroke-width: 2;
+  stroke-dasharray: 5,5;
+  animation: dash 20s linear infinite;
+}
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: -1000;
+  }
+}
+
+.map-origin, .map-destination {
+  fill: white;
+  stroke: #1a2b4c;
+  stroke-width: 2;
+  r: 6;
+}
+
+.map-origin {
+  fill: #10b981;
+}
+
+.map-destination {
+  fill: #ef4444;
+}
+
+.map-actions {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .map-controls {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  
+  .map-actions {
+    align-self: stretch;
+    justify-content: space-between;
+  }
+  
+  .map-legend {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  
+  .map-card {
+    padding: 20px 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --map-height: 180px;
+  }
+  
+  .map-actions {
+    flex-direction: column;
+  }
+  
+  .map-actions button {
+    width: 100%;
+  }
+}

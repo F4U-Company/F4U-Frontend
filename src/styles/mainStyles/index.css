@@ -1,0 +1,240 @@
+/* =============================================
+   ARCHIVO PRINCIPAL - IMPORTA TODOS LOS MÓDULOS CSS
+   ============================================= */
+
+/* Reset y base */
+@import url('./reset.css');
+@import url('./variables.css');
+
+/* Componentes base CRÍTICOS (AÑADE ESTOS) */
+@import url('./components/base.css');        /* Botones, cards, forms base */
+@import url('./components/tabs.css');        /* Sistema de pestañas */
+
+/* Componentes reutilizables */
+@import url('./components/navbar.css');
+@import url('./components/footer.css');
+@import url('./components/carousel.css');
+
+/* Secciones principales */
+@import url('./sections/hero.css');
+@import url('./sections/proceso-reserva.css');
+@import url('./sections/servicios.css');
+@import url('./sections/experiencia.css');
+@import url('./sections/ventajas.css');
+
+/* Pasos del proceso de reserva - ORDEN CORRECTO */
+@import url('./reservation-steps/tabs.css');              /* PRIMERO: Sistema de pestañas */
+@import url('./reservation-steps/origen-destino.css');    /* SEGUNDO: Contenido */
+@import url('./reservation-steps/vuelos.css');
+@import url('./reservation-steps/asientos.css');
+@import url('./reservation-steps/mapa.css');
+@import url('./reservation-steps/extras.css');
+@import url('./reservation-steps/pagos.css');
+@import url('./reservation-steps/experiencia.css');
+/* =============================================
+   ESTILOS GLOBALES Y UTILITARIOS
+   ============================================= */
+
+/* Contenedor principal */
+.main-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.content-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Utilidades de espaciado */
+.section-padding {
+  padding: 80px 20px;
+}
+
+.section-padding-sm {
+  padding: 60px 20px;
+}
+
+.section-padding-lg {
+  padding: 100px 20px;
+}
+
+/* Utilidades de texto */
+.text-center {
+  text-align: center;
+}
+
+.text-left {
+  text-align: left;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.text-muted {
+  color: var(--muted);
+}
+
+.text-muted-light {
+  color: var(--muted-light);
+}
+
+/* Utilidades de flexbox */
+.flex {
+  display: flex;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.flex-column {
+  flex-direction: column;
+}
+
+/* Utilidades de grid */
+.grid {
+  display: grid;
+}
+
+.grid-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.grid-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.grid-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+/* Estados de carga */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.loading-spinner {
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid var(--blue);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Estados vacíos */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  color: #e2e8f0;
+}
+
+/* Transiciones globales */
+.fade-enter {
+  opacity: 0;
+}
+
+.fade-enter-active {
+  opacity: 1;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.fade-exit {
+  opacity: 1;
+}
+
+.fade-exit-active {
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+}
+
+/* Scroll suave */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Focus visible para accesibilidad */
+*:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+/* Mejoras de rendimiento */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  :root {
+    --blue: #0000FF;
+    --blue-2: #0000CC;
+    --muted: #000000;
+    --muted-light: #333333;
+  }
+}
+
+/* Dark mode support (opcional) */
+@media (prefers-color-scheme: dark) {
+  /* Puedes agregar soporte para dark mode aquí */
+}
+
+/* Print styles */
+@media print {
+  .site-header,
+  .site-footer,
+  .hero-carousel,
+  .carousel-arrow {
+    display: none !important;
+  }
+  
+  .hero.full-hero {
+    padding: 40px 20px !important;
+    min-height: auto !important;
+  }
+  
+  .card {
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+  }
+}
