@@ -1,0 +1,78 @@
+/* =============================================
+   ERROR STATES
+   ============================================= */
+
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  color: #2d3748;
+  text-align: center;
+  padding: 2rem;
+  background: #f8fafc;
+}
+
+.error-icon {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+  color: #e53e3e;
+}
+
+.error-container h3 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.error-container p {
+  margin-bottom: 2rem;
+  color: #718096;
+  max-width: 400px;
+  line-height: 1.6;
+}
+
+.error-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.retry-btn {
+  background: #0056b3;
+  color: white;
+  border: none;
+  padding: 0.75rem 2rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.retry-btn:hover {
+  background: #004494;
+  transform: translateY(-1px);
+}
+
+.debug-btn {
+  background: #e2e8f0;
+  color: #4a5568;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.debug-btn:hover {
+  background: #cbd5e0;
+  transform: translateY(-1px);
+}
+
+.debug-btn.small {
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+}

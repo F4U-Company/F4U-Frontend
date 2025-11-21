@@ -1,0 +1,15 @@
+/* =============================================
+   DASHBOARD STYLES - INDEX
+   Archivo principal que importa todos los componentes
+   ============================================= */
+
+/* Importar todos los componentes del dashboard */
+@import './dashboard-base.css';
+@import './loading-states.css';
+@import './error-states.css';
+@import './header.css';
+@import './welcome-banner.css';
+@import './stats-grid.css';
+@import './flight-card.css';
+@import './sidebar.css';
+@import './responsive.css';
