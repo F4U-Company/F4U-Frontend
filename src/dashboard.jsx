@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useMsal } from "@azure/msal-react";
 import { reservationAPI, authAPI, flightAPI, cityAPI } from "./services/api";
-import "./styles/mainStyles/dashboard/dashboard.css";
+import "./styles/mainStyles/dashboard/index.css";
 
 export default function Dashboard() {
   const { accounts, instance } = useMsal();
