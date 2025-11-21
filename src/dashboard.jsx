@@ -23,6 +23,13 @@ export default function Dashboard() {
     origin: null,
     destination: null
   });
+  const [routeData, setRouteData] = useState({
+    userLocation: null,
+    airportLocation: null,
+    distance: null,
+    duration: null,
+    loading: false
+  });
 
   useEffect(() => {
     if (accounts[0]?.localAccountId) {
@@ -55,6 +62,81 @@ export default function Dashboard() {
     }
   };
 
+  // Función para obtener ubicación del usuario por IP
+  const getUserLocationByIP = async () => {
+    try {
+      const response = await fetch('https://ipapi.co/json/');
+      const data = await response.json();
+      return {
+        lat: data.latitude,
+        lng: data.longitude,
+        city: data.city,
+        country: data.country_name
+      };
+    } catch (error) {
+      console.error('Error getting user location:', error);
+      return null;
+    }
+  };
+
+  // Función para obtener coordenadas del aeropuerto principal
+  const getAirportCoordinates = async (cityName) => {
+    // Mapeo de aeropuertos principales de Colombia
+    const airportMap = {
+      'Bogotá': { lat: 4.7016, lng: -74.1469, name: 'El Dorado' },
+      'Medellín': { lat: 6.1645, lng: -75.4231, name: 'José María Córdova' },
+      'Cali': { lat: 3.5432, lng: -76.3816, name: 'Alfonso Bonilla Aragón' },
+      'Cartagena': { lat: 10.4424, lng: -75.5130, name: 'Rafael Núñez' },
+      'Barranquilla': { lat: 10.8896, lng: -74.7806, name: 'Ernesto Cortissoz' },
+      'Santa Marta': { lat: 11.1196, lng: -74.2306, name: 'Simón Bolívar' },
+      'Pereira': { lat: 4.8127, lng: -75.7395, name: 'Matecaña' },
+      'Bucaramanga': { lat: 7.1265, lng: -73.1848, name: 'Palo Negro' }
+    };
+
+    // Buscar el aeropuerto en el mapa
+    const airport = airportMap[cityName];
+    if (airport) {
+      return airport;
+    }
+
+    // Si no está en el mapa, intentar obtenerlo del API de ciudades
+    try {
+      const response = await cityAPI.getCityByName(cityName);
+      if (response.data) {
+        return {
+          lat: response.data.latitude,
+          lng: response.data.longitude,
+          name: `Aeropuerto de ${cityName}`
+        };
+      }
+    } catch (error) {
+      console.error('Error getting airport coordinates:', error);
+    }
+    
+    return null;
+  };
+
+  // Función para calcular distancia y tiempo estimado (fórmula de Haversine)
+  const calculateRoute = (userLoc, airportLoc) => {
+    const R = 6371; // Radio de la Tierra en km
+    const dLat = (airportLoc.lat - userLoc.lat) * Math.PI / 180;
+    const dLng = (airportLoc.lng - userLoc.lng) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(userLoc.lat * Math.PI / 180) * Math.cos(airportLoc.lat * Math.PI / 180) *
+      Math.sin(dLng/2) * Math.sin(dLng/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const distance = R * c;
+    
+    // Estimar tiempo (asumiendo velocidad promedio de 60 km/h en ciudad)
+    const duration = Math.round((distance / 60) * 60); // en minutos
+    
+    return {
+      distance: distance.toFixed(1),
+      duration
+    };
+  };
+
   // Actualizar clima cuando hay reservas
   useEffect(() => {
     if (userReservations.length > 0) {
@@ -84,6 +166,51 @@ export default function Dashboard() {
         });
       }
     }
+  }, [userReservations]);
+
+  // Obtener ruta al aeropuerto cuando hay reservas
+  useEffect(() => {
+    const fetchRouteData = async () => {
+      if (userReservations.length > 0) {
+        setRouteData(prev => ({ ...prev, loading: true }));
+        
+        const firstReservation = userReservations[0];
+        const originCity = firstReservation.fromCity;
+        
+        console.log("🗺️ Calculando ruta al aeropuerto de:", originCity);
+        
+        // Obtener ubicación del usuario
+        const userLoc = await getUserLocationByIP();
+        if (!userLoc) {
+          console.error("❌ No se pudo obtener la ubicación del usuario");
+          setRouteData(prev => ({ ...prev, loading: false }));
+          return;
+        }
+        
+        // Obtener coordenadas del aeropuerto
+        const airportLoc = await getAirportCoordinates(originCity);
+        if (!airportLoc) {
+          console.error("❌ No se pudo obtener las coordenadas del aeropuerto");
+          setRouteData(prev => ({ ...prev, loading: false }));
+          return;
+        }
+        
+        // Calcular distancia y tiempo
+        const route = calculateRoute(userLoc, airportLoc);
+        
+        console.log("✅ Ruta calculada:", route);
+        
+        setRouteData({
+          userLocation: userLoc,
+          airportLocation: airportLoc,
+          distance: route.distance,
+          duration: route.duration,
+          loading: false
+        });
+      }
+    };
+    
+    fetchRouteData();
   }, [userReservations]);
 
   const fetchUserData = async () => {
@@ -847,6 +974,79 @@ ${userReservations.length > 0 ?
                     </div>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Route to Airport Card */}
+            {routeData.userLocation && routeData.airportLocation && !routeData.loading && (
+              <div className="sidebar-card route-card">
+                <h3>🗺️ Ruta al Aeropuerto</h3>
+                
+                <div className="route-section">
+                  {/* Mini mapa visual de la ruta */}
+                  <div className="route-map-container">
+                    <iframe
+                      width="100%"
+                      height="200"
+                      frameBorder="0"
+                      style={{ border: 0 }}
+                      referrerPolicy="no-referrer-when-downgrade"
+                      src={`https://www.google.com/maps/embed/v1/directions?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&origin=${routeData.userLocation.lat},${routeData.userLocation.lng}&destination=${routeData.airportLocation.lat},${routeData.airportLocation.lng}&mode=driving`}
+                      allowFullScreen
+                    />
+                  </div>
+                  
+                  <div className="route-locations">
+                    <div className="location-point">
+                      <div className="location-icon origin">📍</div>
+                      <div className="location-info">
+                        <span className="location-label">Tu ubicación</span>
+                        <span className="location-name">
+                          {routeData.userLocation.city}, {routeData.userLocation.country}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="route-line-container">
+                      <div className="route-dashed-line"></div>
+                      <div className="route-arrow">✈️</div>
+                    </div>
+                    
+                    <div className="location-point">
+                      <div className="location-icon destination">🏢</div>
+                      <div className="location-info">
+                        <span className="location-label">Aeropuerto</span>
+                        <span className="location-name">{routeData.airportLocation.name}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="route-stats">
+                    <div className="route-stat-item">
+                      <div className="stat-icon">📏</div>
+                      <div className="stat-content">
+                        <span className="stat-label">Distancia</span>
+                        <span className="stat-value">{routeData.distance} km</span>
+                      </div>
+                    </div>
+                    <div className="route-stat-item">
+                      <div className="stat-icon">⏱️</div>
+                      <div className="stat-content">
+                        <span className="stat-label">Tiempo estimado</span>
+                        <span className="stat-value">{routeData.duration} min</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <a 
+                    href={`https://www.google.com/maps/dir/?api=1&origin=${routeData.userLocation.lat},${routeData.userLocation.lng}&destination=${routeData.airportLocation.lat},${routeData.airportLocation.lng}&travelmode=driving`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="open-maps-btn"
+                  >
+                    Abrir en Google Maps
+                  </a>
+                </div>
               </div>
             )}
           </aside>
