@@ -19,12 +19,72 @@ export default function Dashboard() {
     userEmail: null,
     reservationsCount: 0
   });
+  const [weatherData, setWeatherData] = useState({
+    origin: null,
+    destination: null
+  });
 
   useEffect(() => {
     if (accounts[0]?.localAccountId) {
       fetchUserData();
     }
   }, [accounts[0]?.localAccountId]);
+
+  // Función para obtener el clima de una ciudad
+  const fetchWeatherData = async (cityName) => {
+    try {
+      const API_KEY = '895284fb2d2c50a520ea537456963d9c'; // API key de OpenWeatherMap
+      const response = await fetch(
+        `https://api.openweathermap.org/data/2.5/weather?q=${cityName}&appid=${API_KEY}&units=metric&lang=es`
+      );
+      const data = await response.json();
+      
+      if (data.cod === 200) {
+        return {
+          temp: Math.round(data.main.temp),
+          description: data.weather[0].description,
+          humidity: data.main.humidity,
+          icon: data.weather[0].icon,
+          city: data.name
+        };
+      }
+      return null;
+    } catch (error) {
+      console.error('Error fetching weather:', error);
+      return null;
+    }
+  };
+
+  // Actualizar clima cuando hay reservas
+  useEffect(() => {
+    if (userReservations.length > 0) {
+      const firstReservation = userReservations[0];
+      
+      // Obtener ciudades desde fromCity y toCity que ya están formateadas
+      const originCityName = firstReservation.fromCity;
+      const destinationCityName = firstReservation.toCity;
+      
+      console.log("🌤️ Obteniendo clima para:", originCityName, "y", destinationCityName);
+      
+      if (originCityName && originCityName !== "Ciudad no disponible") {
+        fetchWeatherData(originCityName).then(data => {
+          if (data) {
+            console.log("✅ Clima origen obtenido:", data);
+            setWeatherData(prev => ({ ...prev, origin: data }));
+          }
+        });
+      }
+      
+      if (destinationCityName && destinationCityName !== "Ciudad no disponible") {
+        fetchWeatherData(destinationCityName).then(data => {
+          if (data) {
+            console.log("✅ Clima destino obtenido:", data);
+            setWeatherData(prev => ({ ...prev, destination: data }));
+          }
+        });
+      }
+    }
+  }, [userReservations]);
 
   const fetchUserData = async () => {
     try {
@@ -738,6 +798,57 @@ ${userReservations.length > 0 ?
                 </div>
               </div>
             </div>
+
+            {/* Weather Card */}
+            {(weatherData.origin || weatherData.destination) && (
+              <div className="sidebar-card weather-card">
+                <h3>🌤️ Clima de tu Viaje</h3>
+                
+                {weatherData.origin && (
+                  <div className="weather-section">
+                    <div className="weather-header">
+                      <span className="weather-label">Origen</span>
+                      <span className="weather-city">{weatherData.origin.city}</span>
+                    </div>
+                    <div className="weather-content">
+                      <div className="weather-icon">
+                        <img 
+                          src={`https://openweathermap.org/img/wn/${weatherData.origin.icon}@2x.png`}
+                          alt={weatherData.origin.description}
+                        />
+                      </div>
+                      <div className="weather-details">
+                        <div className="weather-temp">{weatherData.origin.temp}°C</div>
+                        <div className="weather-desc">{weatherData.origin.description}</div>
+                        <div className="weather-humidity">💧 {weatherData.origin.humidity}%</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {weatherData.destination && (
+                  <div className="weather-section">
+                    <div className="weather-header">
+                      <span className="weather-label">Destino</span>
+                      <span className="weather-city">{weatherData.destination.city}</span>
+                    </div>
+                    <div className="weather-content">
+                      <div className="weather-icon">
+                        <img 
+                          src={`https://openweathermap.org/img/wn/${weatherData.destination.icon}@2x.png`}
+                          alt={weatherData.destination.description}
+                        />
+                      </div>
+                      <div className="weather-details">
+                        <div className="weather-temp">{weatherData.destination.temp}°C</div>
+                        <div className="weather-desc">{weatherData.destination.description}</div>
+                        <div className="weather-humidity">💧 {weatherData.destination.humidity}%</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </aside>
         </div>
       </main>
