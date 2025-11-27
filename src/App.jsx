@@ -1,7 +1,6 @@
 import React, { useRef, useState, useEffect, useMemo } from "react";
 import { useIsAuthenticated, useMsal } from "@azure/msal-react";
 import { loginRequest } from "./authConfig";
-import ProtectedRoute from "./components/ProtectedRoute";
 import AuthTest from "./components/AuthTest";
 import FlightMap from "./components/FlightMap";
 import FlightMap2D from "./components/FlightMap2D";
@@ -33,6 +32,9 @@ export default function App() {
   const [selectedSeat, setSelectedSeat] = useState(null);
   const [lockedSeatId, setLockedSeatId] = useState(null); // ID del asiento bloqueado
   const [selectedExtras, setSelectedExtras] = useState(null); // Extras seleccionados
+
+  // Referencia para la sección de booking
+  const bookingSectionRef = useRef(null);
 
   // Estados para ciudades desde la base de datos
   const [cities, setCities] = useState([]);
@@ -141,10 +143,25 @@ export default function App() {
     }
   };
 
+  // Función para hacer scroll a la sección de booking
+  const scrollToBooking = () => {
+    if (bookingSectionRef.current) {
+      const headerOffset = 100; // Offset para el header
+      const elementPosition = bookingSectionRef.current.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+      
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   // control de apertura de pestañas
   const tryOpenTab = (tabIndex) => {
     if (tabIndex === 0) { 
-      setActiveTab(0); 
+      setActiveTab(0);
+      scrollToBooking();
       return; 
     }
     if (tabIndex === 1) {
@@ -155,6 +172,7 @@ export default function App() {
       // Buscar vuelos automáticamente al abrir la pestaña de vuelos
       searchFlights();
       setActiveTab(1);
+      scrollToBooking();
       return;
     }
     if (tabIndex === 2) {
@@ -163,6 +181,7 @@ export default function App() {
         return;
       }
       setActiveTab(2);
+      scrollToBooking();
       return;
     }
     if (tabIndex === 3) {
@@ -171,6 +190,7 @@ export default function App() {
         return;
       }
       setActiveTab(3);
+      scrollToBooking();
       return;
     }
     if (tabIndex === 4) {
@@ -179,6 +199,7 @@ export default function App() {
         return;
       }
       setActiveTab(4);
+      scrollToBooking();
       return;
     }
     if (tabIndex === 5) {
@@ -187,14 +208,7 @@ export default function App() {
         return;
       }
       setActiveTab(5);
-    }
-    if (tabIndex === 6) {
-      if (!isAuthenticated) {
-        alert("Por favor inicia sesión para acceder a tu experiencia personalizada");
-        return;
-      }
-      setActiveTab(6);
-      return;
+      scrollToBooking();
     }
   };
 
@@ -204,7 +218,6 @@ export default function App() {
   const fourthStatusText = selectedExtras ? "Extras confirmados" : "Configura tus extras";
   const fifthStatusText = "Ver ruta en el mapa";
   const sixthStatusText = "Completa el pago";
-  const seventhStatusText = isAuthenticated ? "Experiencia desbloqueada" : "Inicia sesión para acceder";
 
   // Funciones existentes de la website
   function submit(e) {
@@ -331,24 +344,8 @@ export default function App() {
     }
   }, [isAuthenticated, accounts, instance, tokenSaved]);
 
-  // Efecto para desbloquear asiento cuando el usuario regresa al tab de asientos
-  useEffect(() => {
-    // Si el usuario está en el tab de asientos (tab 2) y hay un asiento bloqueado
-    // significa que regresó desde el tab de mapas, debemos liberar el bloqueo
-    if (activeTab === 2 && lockedSeatId) {
-      const releasePreviousLock = async () => {
-        try {
-          const { seatLockAPI } = await import('./services/api');
-          await seatLockAPI.releaseLock(lockedSeatId);
-          setLockedSeatId(null);
-          console.log('🔓 Asiento desbloqueado al regresar a selección');
-        } catch (error) {
-          console.error('Error al liberar bloqueo al regresar:', error);
-        }
-      };
-      releasePreviousLock();
-    }
-  }, [activeTab, lockedSeatId]);
+  // Nota: El asiento bloqueado permanece bloqueado por 15 minutos
+  // Se liberará automáticamente en el backend o al completar el pago
 
   // Imágenes para el carrusel del hero
   const heroImages = [
@@ -560,8 +557,7 @@ export default function App() {
   console.log('🎨 App.jsx Render:', { isAuthenticated, timestamp: new Date().toLocaleTimeString() });
 
   return (
-    <ProtectedRoute>
-      <div className="site-root" style={{ paddingTop: '70px' }}>
+    <div className="site-root" style={{ paddingTop: '70px' }}>
         {/* HEADER MEJORADO Y DINÁMICO */}
         <header className={`site-header ${isHeaderVisible ? 'visible' : 'hidden'}`}>
           <div className="header-inner">
@@ -575,10 +571,23 @@ export default function App() {
               <a href="#products">Servicios</a>
               <a href="#cdt-mechanics-2">Cómo reservar</a>
               <a href="#contact">Contacto</a>
+              <a href="/dashboard" onClick={(e) => {
+                if (!isAuthenticated) {
+                  e.preventDefault();
+                  instance.loginPopup(loginRequest)
+                    .then(() => {
+                      window.location.href = '/dashboard';
+                    })
+                    .catch(err => {
+                      console.error('Login failed:', err);
+                      alert('Error al iniciar sesión. Por favor intenta de nuevo.');
+                    });
+                }
+              }}>Mis Reservas</a>
             </nav>
 
-            {/* Usuario en el header */}
-            {accounts.length > 0 && (
+            {/* Usuario o Login en el header */}
+            {accounts.length > 0 ? (
               <div className="header-user">
                 <div className="user-info" onClick={() => {
                   const showMenu = document.querySelector('.header-dropdown-menu');
@@ -618,12 +627,10 @@ export default function App() {
                   <div className="menu-divider" />
                   
                   <button className="menu-item" onClick={() => alert('Perfil - En desarrollo')}>
-                    <span className="menu-icon">👤</span>
                     <span>Mi Perfil</span>
                   </button>
                   
-                  <button className="menu-item" onClick={() => alert('Reservas - En desarrollo')}>
-                    <span className="menu-icon">🎫</span>
+                  <button className="menu-item" onClick={() => window.location.href = '/dashboard'}>
                     <span>Mis Reservas</span>
                   </button>
                   
@@ -633,10 +640,29 @@ export default function App() {
                     sessionStorage.clear();
                     instance.logoutPopup({ mainWindowRedirectUri: '/' });
                   }}>
-                    <span className="menu-icon">🚪</span>
                     <span>Cerrar Sesión</span>
                   </button>
                 </div>
+              </div>
+            ) : (
+              <div className="header-login">
+                <button 
+                  className="login-btn"
+                  onClick={() => {
+                    instance.loginPopup(loginRequest)
+                      .catch(err => {
+                        console.error('Login failed:', err);
+                        alert('Error al iniciar sesión. Por favor intenta de nuevo.');
+                      });
+                  }}
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                    <polyline points="10 17 15 12 10 7"/>
+                    <line x1="15" y1="12" x2="3" y2="12"/>
+                  </svg>
+                  Iniciar Sesión
+                </button>
               </div>
             )}
           </div>
@@ -735,33 +761,24 @@ export default function App() {
             </div>
           </section>
 
-          {/* SECCIÓN DE RESERVA TU VUELO - AHORA JUSTO ARRIBA DE PROCESO DE RESERVA */}
-          <section className="booking-tabs-section" style={{ marginTop: '80px', marginBottom: '40px' }}>
+          {/* SECCIÓN DE RESERVA TU VUELO - REDISEÑO PROFESIONAL TIPO AVIANCA/LATAM */}
+          <section ref={bookingSectionRef} className="booking-tabs-section" style={{ marginTop: '80px', marginBottom: '40px' }}>
             <div className="booking-tabs-inner">
-              {/* TÍTULO DE LA SECCIÓN */}
+              {/* TÍTULO DE LA SECCIÓN - REDISEÑADO */}
               <div className="booking-tabs-header">
-                <p className="tiny" style={{ textAlign: 'center', marginBottom: '8px', color: 'var(--blue)', fontWeight: '600', letterSpacing: '1px' }}>RESERVA TU VUELO</p>
-                <h2 style={{ 
-                  textAlign: 'center', 
-                  fontSize: '2.5rem', 
-                  fontWeight: '800', 
-                  marginBottom: '12px',
-                  background: 'linear-gradient(135deg, var(--blue) 0%, var(--teal) 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text'
-                }}>
-                  Tu próxima aventura comienza aquí
+                <div className="booking-header-badge">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                    <line x1="12" y1="22.08" x2="12" y2="12"/>
+                  </svg>
+                  <span>SISTEMA DE RESERVAS</span>
+                </div>
+                <h2 className="booking-main-title">
+                  Reserva tu vuelo con <span className="title-highlight">F4U Airlines</span>
                 </h2>
-                <p style={{ 
-                  textAlign: 'center', 
-                  fontSize: '1.1rem', 
-                  color: 'var(--muted)', 
-                  maxWidth: '600px', 
-                  margin: '0 auto 40px',
-                  lineHeight: '1.6'
-                }}>
-                  Reserva tu vuelo en minutos con nuestro sistema simple y seguro
+                <p className="booking-subtitle">
+                  Completa el proceso de reserva en 5 pasos simples. Selecciona tu ruta, elige tu vuelo perfecto y personaliza tu experiencia de viaje.
                 </p>
               </div>
 
@@ -770,39 +787,58 @@ export default function App() {
                 {/* TAB NAV - VERTICAL A LA IZQUIERDA */}
                 <div className="tabs-shell tabs-vertical">
                   <div className="tabs">
-                    <button className={`tab ${activeTab === 0 ? "active" : ""}`} onClick={() => tryOpenTab(0)}>
-                      <div className="tab-title">1. Origen & Destino</div>
-                      <div className="tab-meta">{firstStatusText} {firstCompleted && <span className="tab-check">✓</span>}</div>
+                    <button 
+                      className={`tab ${activeTab === 0 ? "active" : ""} ${firstCompleted ? "completed" : ""}`} 
+                      onClick={() => tryOpenTab(0)}
+                      data-step="1"
+                    >
+                      <div className="tab-title">Origen & Destino</div>
+                      <div className="tab-meta">{firstStatusText}</div>
                     </button>
 
-                    <button className={`tab ${activeTab === 1 ? "active" : ""} ${!firstCompleted ? "locked" : ""}`} onClick={() => tryOpenTab(1)}>
-                      <div className="tab-title">2. Vuelos</div>
+                    <button 
+                      className={`tab ${activeTab === 1 ? "active" : ""} ${!firstCompleted ? "locked" : ""} ${selectedFlight ? "completed" : ""}`} 
+                      onClick={() => tryOpenTab(1)}
+                      data-step="2"
+                    >
+                      <div className="tab-title">Vuelos</div>
                       <div className="tab-meta">{secondStatusText}</div>
                     </button>
 
-                    <button className={`tab ${activeTab === 2 ? "active" : ""} ${!selectedFlight ? "locked" : ""}`} onClick={() => tryOpenTab(2)}>
-                      <div className="tab-title">3. Asientos</div>
+                    <button 
+                      className={`tab ${activeTab === 2 ? "active" : ""} ${!selectedFlight ? "locked" : ""} ${selectedSeat ? "completed" : ""}`} 
+                      onClick={() => tryOpenTab(2)}
+                      data-step="3"
+                    >
+                      <div className="tab-title">Asientos</div>
                       <div className="tab-meta">{thirdStatusText}</div>
                     </button>
 
-                    <button className={`tab ${activeTab === 3 ? "active" : ""} ${!selectedSeat ? "locked" : ""}`} onClick={() => tryOpenTab(3)}>
-                      <div className="tab-title">4. Extras</div>
+                    <button 
+                      className={`tab ${activeTab === 3 ? "active" : ""} ${!selectedSeat ? "locked" : ""} ${selectedExtras ? "completed" : ""}`} 
+                      onClick={() => tryOpenTab(3)}
+                      data-step="4"
+                    >
+                      <div className="tab-title">Extras</div>
                       <div className="tab-meta">{fourthStatusText}</div>
                     </button>
 
-                    <button className={`tab ${activeTab === 4 ? "active" : ""} ${!selectedExtras ? "locked" : ""}`} onClick={() => tryOpenTab(4)}>
-                      <div className="tab-title">5. Mapas</div>
+                    <button 
+                      className={`tab ${activeTab === 4 ? "active" : ""} ${!selectedExtras ? "locked" : ""}`} 
+                      onClick={() => tryOpenTab(4)}
+                      data-step="5"
+                    >
+                      <div className="tab-title">Mapas</div>
                       <div className="tab-meta">{fifthStatusText}</div>
                     </button>
 
-                    <button className={`tab ${activeTab === 5 ? "active" : ""} ${!selectedExtras ? "locked" : ""}`} onClick={() => tryOpenTab(5)}>
-                      <div className="tab-title">6. Pago</div>
+                    <button 
+                      className={`tab ${activeTab === 5 ? "active" : ""} ${!selectedExtras ? "locked" : ""}`} 
+                      onClick={() => tryOpenTab(5)}
+                      data-step="6"
+                    >
+                      <div className="tab-title">Pago</div>
                       <div className="tab-meta">{sixthStatusText}</div>
-                    </button>
-
-                    <button className={`tab ${activeTab === 6 ? "active" : ""} ${!isAuthenticated ? "locked" : ""}`} onClick={() => tryOpenTab(6)}>
-                      <div className="tab-title">7. Experiencia</div>
-                      <div className="tab-meta">{seventhStatusText}</div>
                     </button>
                   </div>
                 </div>
@@ -971,22 +1007,19 @@ export default function App() {
                             className={`flight-card ${selectedFlight?.id === flight.id ? 'selected' : ''}`}
                             onClick={() => setSelectedFlight(flight)}
                           >
-                            <div className="flight-header">
-                              <div className="flight-airline">
-                                <div>
-                                  <div className="flight-number">{flight.numeroVuelo}</div>
-                                  <div className="flight-status">{flight.estado}</div>
-                                </div>
-                              </div>
+                            {/* Columna izquierda: Info básica del vuelo */}
+                            <div className="flight-info-left">
+                              <div className="flight-number">{flight.numeroVuelo}</div>
+                              <div className="flight-status">{flight.estado}</div>
                               <div className="flight-duration">
-                                <div className="duration-label">Duración</div>
-                                <div className="duration-value">{Math.floor(flight.duracionMinutos / 60)}h {flight.duracionMinutos % 60}m</div>
+                                <span className="duration-label">Duración:</span>
+                                <span className="duration-value">{Math.floor(flight.duracionMinutos / 60)}h {flight.duracionMinutos % 60}m</span>
                               </div>
                             </div>
 
+                            {/* Columna central: Ruta del vuelo */}
                             <div className="flight-route">
                               <div className="flight-time">
-                                <div className="time-label">Salida</div>
                                 <div className="time-value">{new Date(flight.fechaSalida).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</div>
                                 <div className="city-name">{flight.ciudadOrigen.nombre}</div>
                               </div>
@@ -997,48 +1030,39 @@ export default function App() {
                               </div>
 
                               <div className="flight-time">
-                                <div className="time-label">Llegada</div>
                                 <div className="time-value">{new Date(flight.fechaLlegada).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</div>
                                 <div className="city-name">{flight.ciudadDestino.nombre}</div>
                               </div>
                             </div>
 
-                            <div className="flight-details">
-                              <div className="detail-item">
-                                <span className="detail-label">Terminal:</span>
-                                <span className="detail-value">{flight.terminal}</span>
-                              </div>
-                              <div className="detail-item">
-                                <span className="detail-label">Puerta:</span>
-                                <span className="detail-value">{flight.puertaEmbarque}</span>
-                              </div>
-                              <div className="detail-item">
-                                <span className="detail-label">Asientos disponibles:</span>
-                                <span className="detail-value">{flight.asientosDisponiblesEconomica + flight.asientosDisponiblesEjecutiva + flight.asientosDisponiblesPrimeraClase}</span>
-                              </div>
-                            </div>
-
+                            {/* Columna derecha: Precios */}
                             <div className="flight-prices">
                               <div className="price-option">
-                                <div className="price-class">Económica</div>
-                                <div className="price-amount">${flight.precioEconomica}</div>
-                                <div className="price-seats">{flight.asientosDisponiblesEconomica} disponibles</div>
+                                <div>
+                                  <div className="price-class">Económica</div>
+                                  <div className="price-seats">{flight.asientosDisponiblesEconomica} disponibles</div>
+                                </div>
+                                <div className="price-amount">${flight.precioEconomica.toLocaleString()}</div>
                               </div>
                               <div className="price-option">
-                                <div className="price-class">Ejecutiva</div>
-                                <div className="price-amount">${flight.precioEjecutiva}</div>
-                                <div className="price-seats">{flight.asientosDisponiblesEjecutiva} disponibles</div>
+                                <div>
+                                  <div className="price-class">Ejecutiva</div>
+                                  <div className="price-seats">{flight.asientosDisponiblesEjecutiva} disponibles</div>
+                                </div>
+                                <div className="price-amount">${flight.precioEjecutiva.toLocaleString()}</div>
                               </div>
                               <div className="price-option">
-                                <div className="price-class">Primera Clase</div>
-                                <div className="price-amount">${flight.precioPrimeraClase}</div>
-                                <div className="price-seats">{flight.asientosDisponiblesPrimeraClase} disponibles</div>
+                                <div>
+                                  <div className="price-class">Primera Clase</div>
+                                  <div className="price-seats">{flight.asientosDisponiblesPrimeraClase} disponibles</div>
+                                </div>
+                                <div className="price-amount">${flight.precioPrimeraClase.toLocaleString()}</div>
                               </div>
                             </div>
 
                             {selectedFlight?.id === flight.id && (
                               <div className="flight-selected-badge">
-                                ✓ Vuelo seleccionado
+                                ✓ Seleccionado
                               </div>
                             )}
                           </div>
@@ -1083,18 +1107,8 @@ export default function App() {
 
                     {/* BOTONES ASIENTOS */}
                     <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 12 }}>
-                      <button className="btn-secondary" onClick={async () => {
-                        // Si hay un asiento bloqueado, liberarlo al volver
-                        if (lockedSeatId) {
-                          try {
-                            const { seatLockAPI } = await import('./services/api');
-                            await seatLockAPI.releaseLock(lockedSeatId);
-                            setLockedSeatId(null);
-                            console.log('🔓 Asiento desbloqueado al volver');
-                          } catch (error) {
-                            console.error('Error al liberar bloqueo:', error);
-                          }
-                        }
+                      <button className="btn-secondary" onClick={() => {
+                        // Nota: No desbloqueamos el asiento - permanece reservado por 15 minutos
                         setActiveTab(1);
                       }}>Volver a vuelos</button>
                       <button className="btn-cta" disabled={!selectedSeat} onClick={async () => {
@@ -1102,15 +1116,18 @@ export default function App() {
                         if (selectedSeat && selectedSeat.dbId) {
                           try {
                             const { seatLockAPI } = await import('./services/api');
+                            // Usar ID temporal de sessionStorage
                             const userId = sessionStorage.getItem('userSessionId') || 
                                           'user-' + Math.random().toString(36).substr(2, 9);
+                            
+                            // Guardar el userId para usarlo en el pago
                             sessionStorage.setItem('userSessionId', userId);
                             
                             const response = await seatLockAPI.lockSeat(selectedSeat.dbId, userId);
                             if (response.data.success) {
                               setLockedSeatId(selectedSeat.dbId);
                               setActiveTab(3);
-                              console.log('✅ Asiento bloqueado por 15 minutos');
+                              console.log('✅ Asiento bloqueado por 15 minutos para', userId);
                             } else {
                               alert('Este asiento está siendo seleccionado por otro usuario. Por favor regresa y elige otro asiento.');
                             }
@@ -1137,7 +1154,7 @@ export default function App() {
                     />
 
                     {/* BOTONES EXTRAS */}
-                    <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 20 }}>
+                    <div className="extras-actions">
                       <button className="btn-secondary" onClick={() => {
                         setActiveTab(2);
                       }}>Volver a asientos</button>
@@ -1153,7 +1170,7 @@ export default function App() {
 
                 {/* TAB 4 - MAPAS */}
                 {activeTab === 4 && (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 18 }}>
+                  <div className="maps-container">
                     <div className="card map2d-card">
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <h4 style={{ margin: 0 }}>Mapa 2D</h4>
@@ -1181,7 +1198,7 @@ export default function App() {
                       </div>
                     </div>
 
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 420px", gap: 18 }}>
+                    <div className="maps-grid">
                       <div className="card map-card">
                         <h4 style={{ margin: 0, marginBottom: 8 }}>Mapa de recorrido</h4>
                         <div className="map-inner" style={{ height: 220 }}>
@@ -1215,7 +1232,7 @@ export default function App() {
                     </div>
 
                     {/* BOTONES MAPAS */}
-                    <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12, gap: 8 }}>
+                    <div className="map-actions">
                       <button className="btn-secondary" onClick={async () => {
                         setActiveTab(3);
                       }}>Volver a extras</button>
@@ -1258,19 +1275,8 @@ export default function App() {
                       onConfirmPayment={async (paymentData) => {
                         try {
                           const { reservationAPI } = await import('./services/api');
-                          // Asegurar que tenemos userId de sesión para el lock
-                          const userId = sessionStorage.getItem('userSessionId') || 'user-' + Math.random().toString(36).substr(2,9);
-                          sessionStorage.setItem('userSessionId', userId);
-                          
-                          // Intentar/renovar el lock justo antes de confirmar
-                          try {
-                            await reservationAPI.tryLock(selectedSeat.dbId, userId);
-                          } catch (e) {
-                            if (e.response?.status === 409) {
-                              alert('Este asiento está siendo reservado por otro usuario. Por favor selecciona otro.');
-                              return;
-                            }
-                          }
+                          // Obtener el userId que se usó para bloquear el asiento
+                          const lockUserId = sessionStorage.getItem('userSessionId');
                           
                           // Preparar datos completos de la reserva
                           // Calcular precioExtras con reglas de clase
@@ -1290,6 +1296,7 @@ export default function App() {
                           const reservationData = {
                             vueloId: selectedFlight.id,
                             asientoId: selectedSeat.dbId,
+                            lockUserId: lockUserId, // Enviar el ID usado para bloquear
                             pasajeroNombre: paymentData.nombre,
                             pasajeroApellido: paymentData.apellido,
                             pasajeroEmail: paymentData.email,
@@ -1312,14 +1319,17 @@ export default function App() {
                           };
 
                           console.log('📤 Enviando reserva completa:', reservationData);
+                          console.log('🔍 DEBUG FRONTEND:');
+                          console.log('   - lockUserId enviado:', lockUserId);
+                          console.log('   - pasajeroEmail enviado:', paymentData.email);
+                          console.log('   - userSessionId en storage:', sessionStorage.getItem('userSessionId'));
                           
                           // Crear la reserva (esto marca el asiento como ocupado en la BD)
                           const response = await reservationAPI.createReservation(reservationData);
                           
                           console.log('✅ Reserva creada exitosamente:', response.data);
                           
-                          // Limpiar el ID de asiento bloqueado
-                          setLockedSeatId(null);
+                          // El asiento ahora está ocupado permanentemente en la BD
                           
                           // Mostrar confirmación
                           const originCityName = cities.find(c => c.id === Number(originCity))?.nombre || 'origen';
@@ -1331,6 +1341,7 @@ export default function App() {
                           setSelectedFlight(null);
                           setSelectedSeat(null);
                           setSelectedExtras(null);
+                          setLockedSeatId(null);
                           setOriginCity("");
                           setDestCity("");
                           setDepartureDate("");
@@ -1355,126 +1366,6 @@ export default function App() {
                   </div>
                 )}
 
-
-                {/* TAB 6 - EXPERIENCIA */}
-                {activeTab === 6 && (
-                  <div className="card experience-card">
-                    <div className="experience-content">
-                      <div className="experience-header">
-                        <div className="experience-icon">
-                          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                            <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-                          </svg>
-                        </div>
-                        <h3 className="experience-title">¡Experiencia Premium Desbloqueada!</h3>
-                        <p className="experience-subtitle">
-                          Accede a tu dashboard personalizado para vivir una experiencia de vuelo única
-                        </p>
-                      </div>
-
-                      <div className="experience-features">
-                        <div className="feature-grid">
-                          <div className="feature-item">
-                            <div className="feature-icon">
-                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
-                                <polyline points="7.5 4.21 12 6.81 16.5 4.21"/>
-                                <polyline points="7.5 19.79 7.5 14.6 3 12"/>
-                                <polyline points="21 12 16.5 14.6 16.5 19.79"/>
-                                <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
-                                <line x1="12" y1="22.08" x2="12" y2="12"/>
-                              </svg>
-                            </div>
-                            <div className="feature-content">
-                              <h4>Seguimiento en Tiempo Real</h4>
-                              <p>Monitorea tu vuelo, estado del equipaje y conexiones en vivo</p>
-                            </div>
-                          </div>
-
-                          <div className="feature-item">
-                            <div className="feature-icon">
-                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <circle cx="12" cy="12" r="10"/>
-                                <path d="M12 6v6l4 2"/>
-                              </svg>
-                            </div>
-                            <div className="feature-content">
-                              <h4>Alertas Inteligentes</h4>
-                              <p>Notificaciones proactivas sobre cambios y oportunidades</p>
-                            </div>
-                          </div>
-
-                          <div className="feature-item">
-                            <div className="feature-icon">
-                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
-                                <circle cx="9" cy="7" r="4"/>
-                                <path d="M23 21v-2a4 4 0 00-3-3.87"/>
-                                <path d="M16 3.13a4 4 0 010 7.75"/>
-                              </svg>
-                            </div>
-                            <div className="feature-content">
-                              <h4>Asistencia Personal 24/7</h4>
-                              <p>Tu equipo de soporte dedicado durante todo el viaje</p>
-                            </div>
-                          </div>
-
-                          <div className="feature-item">
-                            <div className="feature-icon">
-                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
-                                <polyline points="22 4 12 14.01 9 11.01"/>
-                              </svg>
-                            </div>
-                            <div className="feature-content">
-                              <h4>Recompensas Exclusivas</h4>
-                              <p>Acceso a upgrades, lounges y beneficios por lealtad</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="experience-cta">
-                        <div className="cta-content">
-                          <h4>Tu viaje, tu experiencia</h4>
-                          <p>
-                            Descubre un mundo de comodidades diseñadas especialmente para ti. 
-                            Desde el momento de tu reserva hasta que pisas tu destino, 
-                            cada detalle está cuidado para hacer de tu viaje una experiencia memorable.
-                          </p>
-                        </div>
-                        <button 
-                          className="experience-btn"
-                          onClick={() => window.location.href = '/dashboard'}
-                        >
-                          <span>Acceder a Mi Dashboard</span>
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M5 12h14M12 5l7 7-7 7"/>
-                          </svg>
-                        </button>
-                      </div>
-
-                      <div className="experience-footer">
-                        <div className="security-badge">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                          </svg>
-                          <span>Experiencia 100% segura y personalizada</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* BOTONES EXPERIENCIA */}
-                    <div style={{ display: "flex", justifyContent: "space-between", marginTop: "24px", gap: "8px" }}>
-                      <button className="btn-secondary" onClick={() => setActiveTab(5)}>
-                        ← Volver a pagos
-                      </button>
-                      <button className="btn-secondary" onClick={() => setActiveTab(0)}>
-                        Nueva reserva
-                      </button>
-                    </div>
-                  </div>
-                )}
               </div>
               {/* Cierre del contenedor flex principal */}
             </div>
@@ -1828,10 +1719,9 @@ export default function App() {
             </div>
           </footer>
         </main>
+        
+        {/* Panel de pruebas - solo en desarrollo */}
+        {import.meta.env.DEV && <AuthTest />}
       </div>
-      
-      {/* Panel de pruebas - solo en desarrollo */}
-      {import.meta.env.DEV && <AuthTest />}
-    </ProtectedRoute>
-  );
-}
+    );
+  }

@@ -204,22 +204,15 @@ export default function SeatSelector({ onSelect, flightId, onSeatLocked }) {
     return () => clearInterval(interval);
   }, [flightId]);
 
-  // Efecto de limpieza: liberar el asiento bloqueado cuando el componente se desmonte
+  // Efecto de limpieza: solo desconectar WebSocket al desmontar
   useEffect(() => {
     return () => {
       if (stompRef.current) {
         try { stompRef.current.deactivate(); } catch {}
       }
-      // Al desmontar el componente, liberar el asiento si hay uno bloqueado
-      if (currentLockedSeatRef.current) {
-        seatLockAPI.releaseLock(currentLockedSeatRef.current)
-          .then(() => {
-            console.log(`🔓 Asiento liberado al desmontar componente`);
-          })
-          .catch((error) => {
-            console.error('Error al liberar asiento en cleanup:', error);
-          });
-      }
+      // NO liberamos el asiento aquí - debe permanecer bloqueado por 15 minutos
+      // o hasta que se complete el pago o expire el tiempo en el backend
+      console.log('ℹ️ SeatSelector desmontado - asiento permanece bloqueado');
     };
   }, []);
 
@@ -348,15 +341,11 @@ export default function SeatSelector({ onSelect, flightId, onSeatLocked }) {
     const node = containerRef.current;
     if (!node) return;
     
-    // Solo hacer scroll inicial al centro la primera vez
+    // Solo hacer scroll inicial a la izquierda (inicio) la primera vez
     if (!hasInitiallyScrolled.current && rows.length > 0) {
-      const mid = Math.floor(rows.length / 2);
-      const col = node.querySelectorAll(".row-column")[mid];
-      if (col) {
-        const left = col.offsetLeft - 40;
-        node.scrollTo({ left, behavior: "smooth" });
-        hasInitiallyScrolled.current = true;
-      }
+      // Iniciar desde la izquierda (posición 0)
+      node.scrollTo({ left: 0, behavior: "smooth" });
+      hasInitiallyScrolled.current = true;
     } 
     // En recargas, restaurar la posición anterior
     else if (hasInitiallyScrolled.current && scrollPositionRef.current !== undefined) {

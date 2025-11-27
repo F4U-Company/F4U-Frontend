@@ -7,12 +7,21 @@
   --map-height: 220px; /* altura fija para el globo */
 }
 
+.maps-container {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+  padding: 32px;
+}
+
 .map-card {
-  background: #fff;
-  border-radius: 20px;
-  padding: 24px;
-  box-shadow: 0 8px 25px rgba(0,0,0,0.08);
-  border: 1px solid rgba(17,17,17,0.05);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.4);
 }
 
 .map-header {
@@ -110,9 +119,11 @@
   align-items: center;
   margin-top: 16px;
   padding: 16px;
-  background: #f8fafc;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
 }
 
 .map-info {
@@ -173,9 +184,11 @@
   gap: 16px;
   margin-top: 16px;
   padding: 12px 16px;
-  background: #f8fafc;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
 }
 
 .legend-item {
@@ -202,6 +215,28 @@
 
 .legend-color.destination {
   background: #ef4444;
+}
+
+/* Tarjeta del mapa 2D */
+.map2d-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+/* Tarjeta del visor 3D */
+.viewer-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.4);
 }
 
 /* Vista 2D alternativa */
@@ -248,15 +283,29 @@
   fill: #ef4444;
 }
 
+.maps-grid {
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  gap: 18px;
+}
+
 .map-actions {
-  margin-top: 20px;
   display: flex;
   justify-content: flex-end;
   gap: 12px;
+  padding: 0 32px 32px 32px;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
+  .maps-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .maps-container {
+    padding: 20px;
+  }
+  
   .map-controls {
     flex-direction: column;
     gap: 12px;

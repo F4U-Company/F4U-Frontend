@@ -1,159 +1,271 @@
 /* =============================================
-   SISTEMA DE PESTAÑAS - ESTRUCTURA PRINCIPAL
+   SISTEMA DE RESERVAS - DISEÑO PROFESIONAL AVIANCA/LATAM
    ============================================= */
 
-/* Sección contenedora */
+/* Sección contenedora principal */
 .booking-tabs-section {
-  padding: 60px 20px;
-  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+  padding: 0;
+  background: linear-gradient(180deg, #1a2b4c 0%, #0a1628 100%);
   position: relative;
+  overflow: hidden;
+  min-height: 100vh;
 }
 
+/* Patrón de fondo decorativo */
 .booking-tabs-section::before {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(0,102,204,0.1), transparent);
+  bottom: 0;
+  background-image: 
+    linear-gradient(90deg, rgba(0, 102, 204, 0.03) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(0, 102, 204, 0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+/* Efecto de iluminación superior */
+.booking-tabs-section::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(ellipse at top, rgba(0, 102, 204, 0.15) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Header de la sección - Rediseñado */
+.booking-tabs-header {
+  padding: 80px 20px 60px;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.booking-header-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 24px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 30px;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  margin-bottom: 24px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.booking-header-badge svg {
+  stroke: #ffffff;
+}
+
+.booking-main-title {
+  font-size: 3.5rem;
+  font-weight: 900;
+  color: #ffffff;
+  margin: 0 0 24px 0;
+  line-height: 1.2;
+  letter-spacing: -1px;
+}
+
+.title-highlight {
+  background: linear-gradient(135deg, #00d4ff 0%, #0066cc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  position: relative;
+}
+
+.booking-subtitle {
+  font-size: 1.125rem;
+  color: rgba(255, 255, 255, 0.8);
+  max-width: 700px;
+  margin: 0 auto;
+  line-height: 1.8;
+  font-weight: 400;
 }
 
 .booking-tabs-inner {
-  max-width: var(--max-width);
+  max-width: 1400px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+/* Layout principal - Contenedor de pasos horizontales */
+.tabs-layout-container {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  padding: 0 20px 80px;
+  max-width: 1400px;
   margin: 0 auto;
 }
 
-/* Layout principal */
-.tabs-layout-container {
-  display: flex;
-  gap: 24px;
-  align-items: flex-start;
-}
-
-/* Pestañas verticales */
+/* Barra de progreso horizontal tipo Avianca */
 .tabs-shell.tabs-vertical {
-  margin: 0;
+  margin: 0 0 30px 0;
   padding: 0;
-  min-width: 260px;
-  position: sticky;
-  top: 20px;
-  align-self: flex-start;
+  width: 100%;
+  position: relative;
 }
 
 .tabs-shell.tabs-vertical .tabs {
-  flex-direction: column;
-  gap: 12px;
-  background: #fff;
-  border-radius: 16px;
-  padding: 8px;
-  box-shadow: 0 8px 25px rgba(0,0,0,0.08);
-  border: 1px solid rgba(17,17,17,0.05);
-}
-
-.tabs-shell.tabs-vertical .tab {
-  flex: none;
-  width: 100%;
-  align-items: flex-start;
-  text-align: left;
-  padding: 16px 20px;
-  border-radius: 12px;
-}
-
-.tabs-shell.tabs-vertical .tab::before {
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: auto;
-  width: 3px;
-  height: 100%;
-  background: linear-gradient(180deg, var(--blue), var(--blue-2));
-}
-
-/* Pestañas base */
-.tabs {
   display: flex;
-  background: #fff;
+  flex-direction: row;
+  gap: 0;
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 16px;
-  padding: 8px;
-  box-shadow: 0 8px 25px rgba(0,0,0,0.08);
-  border: 1px solid rgba(17,17,17,0.05);
-  gap: 8px;
-}
-
-.tab {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 20px 16px;
-  border: none;
-  background: transparent;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.3s ease;
+  padding: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
   position: relative;
   overflow: hidden;
 }
 
-.tab::before {
+/* Línea de progreso conectora */
+.tabs-shell.tabs-vertical .tabs::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--blue), var(--blue-2));
-  transform: scaleX(0);
-  transition: transform 0.3s ease;
+  top: 50%;
+  left: 12px;
+  right: 12px;
+  height: 2px;
+  background: linear-gradient(90deg, 
+    rgba(255, 255, 255, 0.2) 0%, 
+    rgba(0, 168, 150, 0.5) 50%, 
+    rgba(255, 255, 255, 0.2) 100%
+  );
+  transform: translateY(-50%);
+  z-index: 0;
 }
 
-.tab.active::before {
-  transform: scaleX(1);
+.tabs-shell.tabs-vertical .tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 24px 16px;
+  border-radius: 12px;
+  border: none;
+  background: transparent;
+  position: relative;
+  z-index: 1;
+  min-height: 120px;
+  justify-content: center;
 }
 
-.tab.active {
-  background: rgba(0,102,204,0.05);
-  transform: translateY(-2px);
-}
-
-.tab:hover:not(.locked) {
-  background: rgba(0,102,204,0.02);
-  transform: translateY(-1px);
-}
-
-.tab.locked {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.tab-title {
+/* Círculo numerado tipo Avianca */
+.tabs-shell.tabs-vertical .tab::before {
+  content: attr(data-step);
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
   font-weight: 700;
-  font-size: 16px;
-  margin-bottom: 6px;
-  color: #111;
-  transition: color 0.3s ease;
+  color: rgba(255, 255, 255, 0.6);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 2;
 }
 
-.tab.active .tab-title {
-  color: var(--blue);
+/* Estados de los tabs */
+
+/* Tab activo - círculo azul brillante */
+.tabs-shell.tabs-vertical .tab.active::before {
+  background: linear-gradient(135deg, #0066ff, #00d4ff);
+  border-color: #00d4ff;
+  color: white;
+  box-shadow: 0 0 20px rgba(0, 100, 255, 0.5);
+}
+
+.tabs-shell.tabs-vertical .tab.active .tab-title {
+  color: white;
+  font-weight: 700;
+}
+
+.tabs-shell.tabs-vertical .tab.active .tab-meta {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Tab completado - mantener estilo normal con checkmark */
+.tabs-shell.tabs-vertical .tab.completed::before {
+  content: '✓';
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Tab bloqueado/deshabilitado */
+.tabs-shell.tabs-vertical .tab.locked,
+.tabs-shell.tabs-vertical .tab[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.tabs-shell.tabs-vertical .tab.locked::before,
+.tabs-shell.tabs-vertical .tab[aria-disabled="true"]::before {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* Hover effect para tabs disponibles */
+.tabs-shell.tabs-vertical .tab:not(.locked):not([aria-disabled="true"]):hover::before {
+  transform: translateX(-50%) scale(1.1);
+  border-color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.tabs-shell.tabs-vertical .tab:not(.locked):not([aria-disabled="true"]):hover .tab-title {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Estilos de texto dentro de tabs */
+.tab-title {
+  font-weight: 600;
+  font-size: 14px;
+  margin-top: 78px;
+  color: rgba(255, 255, 255, 0.7);
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .tab-meta {
-  font-size: 13px;
-  color: var(--muted-light);
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
   display: flex;
   align-items: center;
   gap: 4px;
   transition: color 0.3s ease;
-}
-
-.tab.active .tab-meta {
-  color: var(--blue);
+  margin-top: 4px;
 }
 
 .tab-check {
-  color: var(--teal);
+  color: #00d4aa;
   font-weight: 700;
 }
 
@@ -165,6 +277,10 @@
 .tab-content {
   flex: 1;
   min-width: 0;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 40px;
 }
 
 .tab-pane {
@@ -189,18 +305,33 @@
 
 /* Estilos base para cards */
 .card {
-  background: #fff;
-  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border-radius: 16px;
   padding: 0;
-  box-shadow: 0 15px 40px rgba(0,0,0,0.08);
-  border: 1px solid rgba(17,17,17,0.05);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.4);
   overflow: hidden;
-  transition: all 0.4s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #0066ff 0%, #00d4ff 100%);
+  opacity: 1;
 }
 
 .card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 20px 50px rgba(0,0,0,0.12);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.92);
 }
 
 .controls-card {
@@ -209,86 +340,156 @@
 
 /* Botones base */
 .btn-secondary {
-  background: transparent;
-  color: var(--muted);
-  border: 2px solid rgba(17,17,17,0.1);
-  padding: 12px 20px;
-  border-radius: 12px;
-  font-weight: 600;
+  background: #f8fafc;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 14px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
+  box-shadow: none;
 }
 
 .btn-secondary:hover {
-  background: rgba(17,17,17,0.02);
-  border-color: rgba(17,17,17,0.2);
-  transform: translateY(-1px);
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #475569;
 }
 
 .btn-cta {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: linear-gradient(135deg, var(--blue), var(--blue-2));
+  background: linear-gradient(135deg, #0066ff 0%, #0052cc 100%);
   color: white;
   border: none;
-  padding: 12px 24px;
-  border-radius: 12px;
+  padding: 10px 24px;
+  border-radius: 8px;
   font-weight: 600;
+  font-size: 14px;
   cursor: pointer;
-  box-shadow: 0 8px 20px rgba(0,102,204,0.2);
-  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 102, 255, 0.2);
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-cta::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.btn-cta:hover:not(:disabled)::before {
+  left: 100%;
 }
 
 .btn-cta:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 25px rgba(0,102,204,0.3);
+  background: linear-gradient(135deg, #0052cc 0%, #0041a3 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12), 0 6px 20px rgba(0, 102, 255, 0.3);
+}
+
+.btn-cta:active:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(0, 68, 153, 0.25);
 }
 
 .btn-cta:disabled {
   opacity: 0.5;
   cursor: not-allowed;
   transform: none;
-  box-shadow: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 /* Responsive para tabs */
 @media (max-width: 768px) {
-  .tabs-layout-container {
-    flex-direction: column;
+  .booking-tabs-header {
+    padding: 60px 15px 40px;
   }
 
-  .tabs-shell.tabs-vertical {
-    min-width: 100%;
-    position: static;
-    margin-bottom: 24px;
+  .booking-main-title {
+    font-size: 2.5rem;
+  }
+
+  .booking-subtitle {
+    font-size: 1rem;
+  }
+
+  .tabs-layout-container {
+    flex-direction: column;
+    padding: 0 15px 60px;
   }
 
   .tabs-shell.tabs-vertical .tabs {
-    flex-direction: row;
     overflow-x: auto;
-    padding: 8px;
+    overflow-y: hidden;
+    padding: 10px 8px;
+    gap: 8px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  }
+
+  .tabs-shell.tabs-vertical .tabs::-webkit-scrollbar {
+    height: 4px;
+  }
+
+  .tabs-shell.tabs-vertical .tabs::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
   }
 
   .tabs-shell.tabs-vertical .tab {
-    flex: 1;
-    min-width: 150px;
-    align-items: center;
-    text-align: center;
-    padding: 16px 12px;
+    flex: 0 0 auto;
+    min-width: 120px;
+    padding: 20px 12px;
+    min-height: 100px;
   }
 
   .tabs-shell.tabs-vertical .tab::before {
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: auto;
-    width: 100%;
-    height: 3px;
-    background: linear-gradient(90deg, var(--blue), var(--blue-2));
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
   }
-  
-  .booking-tabs-section {
-    padding: 40px 15px;
+
+  .tab-title {
+    font-size: 12px;
+    margin-top: 60px;
+  }
+
+  .tab-meta {
+    font-size: 10px;
+  }
+
+  .card {
+    border-radius: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .booking-main-title {
+    font-size: 2rem;
+  }
+
+  .booking-header-badge {
+    font-size: 11px;
+    padding: 6px 12px;
+  }
+
+  .tabs-shell.tabs-vertical .tab {
+    min-width: 100px;
+  }
+
+  .tabs-shell.tabs-vertical .tab::before {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
   }
 }

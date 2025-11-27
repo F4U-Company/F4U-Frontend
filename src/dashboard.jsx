@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { useMsal } from "@azure/msal-react";
+import { useMsal, useIsAuthenticated } from "@azure/msal-react";
 import { reservationAPI, authAPI, flightAPI, cityAPI } from "./services/api";
+import ProtectedRoute from "./components/ProtectedRoute";
 import "./styles/mainStyles/dashboard/index.css";
 
 export default function Dashboard() {
   const { accounts, instance } = useMsal();
+  const isAuthenticated = useIsAuthenticated();
   const [userReservations, setUserReservations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -30,6 +32,16 @@ export default function Dashboard() {
     duration: null,
     loading: false
   });
+
+  // Verificar autenticación inmediatamente
+  useEffect(() => {
+    const token = sessionStorage.getItem('accessToken');
+    if (!isAuthenticated && !token) {
+      console.log('🚫 No autenticado - Redirigiendo a home');
+      window.location.href = '/';
+      return;
+    }
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (accounts[0]?.localAccountId) {
@@ -128,8 +140,8 @@ export default function Dashboard() {
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     const distance = R * c;
     
-    // Estimar tiempo (asumiendo velocidad promedio de 60 km/h en ciudad)
-    const duration = Math.round((distance / 60) * 60); // en minutos
+    // Estimar tiempo (asumiendo velocidad promedio de 12 km/h en ciudad)
+    const duration = Math.round((distance / 12) * 60); // en minutos
     
     return {
       distance: distance.toFixed(1),
@@ -146,12 +158,12 @@ export default function Dashboard() {
       const originCityName = firstReservation.fromCity;
       const destinationCityName = firstReservation.toCity;
       
-      console.log("🌤️ Obteniendo clima para:", originCityName, "y", destinationCityName);
+      console.log("Obteniendo clima para:", originCityName, "y", destinationCityName);
       
       if (originCityName && originCityName !== "Ciudad no disponible") {
         fetchWeatherData(originCityName).then(data => {
           if (data) {
-            console.log("✅ Clima origen obtenido:", data);
+            console.log("Clima origen obtenido:", data);
             setWeatherData(prev => ({ ...prev, origin: data }));
           }
         });
@@ -160,7 +172,7 @@ export default function Dashboard() {
       if (destinationCityName && destinationCityName !== "Ciudad no disponible") {
         fetchWeatherData(destinationCityName).then(data => {
           if (data) {
-            console.log("✅ Clima destino obtenido:", data);
+            console.log("Clima destino obtenido:", data);
             setWeatherData(prev => ({ ...prev, destination: data }));
           }
         });
@@ -177,12 +189,12 @@ export default function Dashboard() {
         const firstReservation = userReservations[0];
         const originCity = firstReservation.fromCity;
         
-        console.log("🗺️ Calculando ruta al aeropuerto de:", originCity);
+        console.log("Calculando ruta al aeropuerto de:", originCity);
         
         // Obtener ubicación del usuario
         const userLoc = await getUserLocationByIP();
         if (!userLoc) {
-          console.error("❌ No se pudo obtener la ubicación del usuario");
+          console.error("No se pudo obtener la ubicación del usuario");
           setRouteData(prev => ({ ...prev, loading: false }));
           return;
         }
@@ -190,7 +202,7 @@ export default function Dashboard() {
         // Obtener coordenadas del aeropuerto
         const airportLoc = await getAirportCoordinates(originCity);
         if (!airportLoc) {
-          console.error("❌ No se pudo obtener las coordenadas del aeropuerto");
+          console.error("No se pudo obtener las coordenadas del aeropuerto");
           setRouteData(prev => ({ ...prev, loading: false }));
           return;
         }
@@ -198,7 +210,7 @@ export default function Dashboard() {
         // Calcular distancia y tiempo
         const route = calculateRoute(userLoc, airportLoc);
         
-        console.log("✅ Ruta calculada:", route);
+        console.log("Ruta calculada:", route);
         
         setRouteData({
           userLocation: userLoc,
@@ -219,48 +231,68 @@ export default function Dashboard() {
       setError(null);
       setDebugInfo(prev => ({ ...prev, endpointsTested: [] }));
       
-      console.log("🔄 Iniciando carga de datos del usuario...");
+      console.log("Iniciando carga de datos del usuario...");
+      
+      // Verificar que el usuario esté autenticado antes de hacer peticiones
+      const token = sessionStorage.getItem('accessToken');
+      if (!token) {
+        console.error("No hay token de autenticación");
+        setError("No estás autenticado. Redirigiendo...");
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 1500);
+        setLoading(false);
+        return;
+      }
       
       // TEST 1: Verificar autenticación
       try {
-        console.log("🔐 Test 1 - Verificando autenticación...");
+        console.log("Test 1 - Verificando autenticación...");
         const authResponse = await authAPI.validateToken();
-        console.log("✅ Token válido:", authResponse.data);
-        addDebugInfo("✅ /api/auth/validate-token");
+        console.log("Token válido:", authResponse.data);
+        addDebugInfo("/api/auth/validate-token");
       } catch (authError) {
-        console.error("❌ Error de autenticación:", authError);
-        setError("Error de autenticación. Por favor, inicia sesión nuevamente.");
+        console.error("Error de autenticación:", authError);
+        if (authError.response?.status === 401 || authError.message?.includes('No autorizado')) {
+          setError("Sesión expirada. Por favor, inicia sesión nuevamente.");
+          sessionStorage.clear();
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 1500);
+        } else {
+          setError("Error de autenticación. Por favor, inicia sesión nuevamente.");
+        }
         setLoading(false);
         return;
       }
 
       // TEST 2: Obtener perfil de usuario
       try {
-        console.log("👤 Test 2 - Obteniendo perfil de usuario...");
+        console.log("Test 2 - Obteniendo perfil de usuario...");
         const userProfile = await authAPI.getUserProfile();
         const userEmail = userProfile.data.email || userProfile.data.azureObjectId;
-        console.log("✅ Perfil obtenido:", userProfile.data);
+        console.log("Perfil obtenido:", userProfile.data);
         setDebugInfo(prev => ({ 
           ...prev, 
           userEmail,
-          endpointsTested: [...prev.endpointsTested, "✅ /api/auth/me"]
+          endpointsTested: [...prev.endpointsTested, "/api/auth/me"]
         }));
       } catch (profileError) {
-        console.error("❌ Error obteniendo perfil:", profileError);
-        addDebugInfo("❌ /api/auth/me");
+        console.error("Error obteniendo perfil:", profileError);
+        addDebugInfo("/api/auth/me");
       }
 
       // TEST 3: Obtener estadísticas del usuario
       let statsData = { totalReservations: 0, activeReservations: 0, accumulatedMiles: 0, level: "Bronce" };
       try {
-        console.log("📊 Test 3 - Obteniendo estadísticas...");
+        console.log("Test 3 - Obteniendo estadísticas...");
         const statsResponse = await reservationAPI.getUserStats();
         statsData = statsResponse.data;
-        console.log("📊 Estadísticas obtenidas:", statsData);
-        addDebugInfo("✅ /api/reservaciones/usuario/estadisticas");
+        console.log("Estadísticas obtenidas:", statsData);
+        addDebugInfo("/api/reservaciones/usuario/estadisticas");
       } catch (statsError) {
-        console.error("❌ Error obteniendo estadísticas:", statsError);
-        addDebugInfo("❌ /api/reservaciones/usuario/estadisticas");
+        console.error("Error obteniendo estadísticas:", statsError);
+        addDebugInfo("/api/reservaciones/usuario/estadisticas");
       }
       
       setStats({
@@ -273,32 +305,32 @@ export default function Dashboard() {
       // TEST 4: Obtener reservas del usuario
       let reservations = [];
       try {
-        console.log("📋 Test 4 - Obteniendo reservas del usuario...");
+        console.log("Test 4 - Obteniendo reservas del usuario...");
         const reservationsResponse = await reservationAPI.getUserReservations();
         reservations = reservationsResponse.data;
-        console.log("📋 Reservas obtenidas:", reservations);
+        console.log("Reservas obtenidas:", reservations);
         setDebugInfo(prev => ({ 
           ...prev, 
           reservationsCount: reservations.length,
-          endpointsTested: [...prev.endpointsTested, "✅ /api/reservaciones/usuario"]
+          endpointsTested: [...prev.endpointsTested, "/api/reservaciones/usuario"]
         }));
         
         if (!reservations || reservations.length === 0) {
-          console.log("📭 No hay reservas encontradas");
+          console.log("No hay reservas encontradas");
           setUserReservations([]);
           setLoading(false);
           return;
         }
       } catch (reservationsError) {
-        console.error("❌ Error obteniendo reservas:", reservationsError);
-        addDebugInfo("❌ /api/reservaciones/usuario");
+        console.error("Error obteniendo reservas:", reservationsError);
+        addDebugInfo("/api/reservaciones/usuario");
         
         // Intentar con endpoint alternativo
         try {
-          console.log("🔄 Intentando con endpoint alternativo...");
+          console.log("Intentando con endpoint alternativo...");
           const allReservationsResponse = await reservationAPI.getAllReservations();
           const allReservations = allReservationsResponse.data;
-          console.log("📋 Todas las reservas:", allReservations);
+          console.log("Todas las reservas:", allReservations);
           addDebugInfo("⚠️ /api/reservaciones (todas)");
           
           // Filtrar por email del usuario si es posible
@@ -312,7 +344,7 @@ export default function Dashboard() {
             reservations = allReservations;
           }
         } catch (allReservationsError) {
-          console.error("❌ Error obteniendo todas las reservas:", allReservationsError);
+          console.error("Error obteniendo todas las reservas:", allReservationsError);
           setError("No se pudieron cargar las reservas. Verifica la conexión con el servidor.");
           setLoading(false);
           return;
@@ -327,9 +359,9 @@ export default function Dashboard() {
         
         const formattedReservations = formatReservationsData(enrichedReservations);
         setUserReservations(formattedReservations);
-        addDebugInfo("✅ Reservas enriquecidas con vuelos");
+        addDebugInfo("Reservas enriquecidas con vuelos");
       } catch (enrichError) {
-        console.error("❌ Error enriqueciendo reservas:", enrichError);
+        console.error("Error enriqueciendo reservas:", enrichError);
         // Usar reservas básicas si falla el enriquecimiento
         const formattedReservations = formatReservationsData(reservations);
         setUserReservations(formattedReservations);
@@ -337,7 +369,7 @@ export default function Dashboard() {
       }
       
     } catch (err) {
-      console.error("❌ Error general fetching user data:", err);
+      console.error("Error general fetching user data:", err);
       
       if (err.response?.status === 401) {
         setError("Sesión expirada. Por favor, inicia sesión nuevamente.");
@@ -370,7 +402,7 @@ export default function Dashboard() {
     for (const reservation of reservations) {
       try {
         if (reservation.vueloId) {
-          console.log(`🔄 Obteniendo info del vuelo ${reservation.vueloId} para reserva ${reservation.id}`);
+          console.log(`Obteniendo info del vuelo ${reservation.vueloId} para reserva ${reservation.id}`);
           const flightResponse = await flightAPI.getFlightById(reservation.vueloId);
           const flight = flightResponse.data;
           
@@ -401,7 +433,7 @@ export default function Dashboard() {
           enrichedReservations.push(reservation);
         }
       } catch (flightError) {
-        console.error(`❌ Error obteniendo vuelo ${reservation.vueloId}:`, flightError);
+        console.error(`Error obteniendo vuelo ${reservation.vueloId}:`, flightError);
         enrichedReservations.push(reservation);
       }
     }
@@ -499,7 +531,7 @@ export default function Dashboard() {
           travelClass: getTravelClassDisplay(reservation.clase)
         };
       } catch (error) {
-        console.error("❌ Error formateando reserva:", error, reservation);
+        console.error("Error formateando reserva:", error, reservation);
         return null;
       }
     }).filter(reservation => reservation !== null);
@@ -551,25 +583,41 @@ export default function Dashboard() {
     { 
       label: "Reservas Totales", 
       value: stats.totalReservations, 
-      icon: "📋", 
+      icon: (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+        </svg>
+      ), 
       color: "#0056b3" 
     },
     { 
       label: "Reservas Activas", 
       value: stats.activeReservations, 
-      icon: "✅", 
+      icon: (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+      ), 
       color: "#003d82" 
     },
     { 
       label: "Millas Acumuladas", 
       value: stats.accumulatedMiles, 
-      icon: "⭐", 
+      icon: (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+        </svg>
+      ), 
       color: "#0056b3" 
     },
     { 
       label: "Nivel", 
       value: stats.level, 
-      icon: "🏆", 
+      icon: (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+        </svg>
+      ), 
       color: "#003d82" 
     }
   ];
@@ -614,7 +662,7 @@ Estado: ${reservation.status}
 
   const handleDebugInfo = () => {
     const debugText = `
-🔍 INFORMACIÓN DE DEBUG
+INFORMACIÓN DE DEBUG
 
 Endpoints probados:
 ${debugInfo.endpointsTested.join('\n')}
@@ -629,79 +677,131 @@ ${userReservations.length > 0 ?
   'No hay reservas'}
     `.trim();
     
-    console.log("🔍 Debug Info:", debugText);
+    console.log("Debug Info:", debugText);
     alert(debugText);
   };
 
+  // No mostrar nada si no está autenticado
+  const token = sessionStorage.getItem('accessToken');
+  if (!isAuthenticated && !token) {
+    return null;
+  }
+
   if (loading) {
     return (
-      <div className="dashboard-container">
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
-          <p>Cargando tu información de reservas...</p>
-          <div className="debug-info">
-            <button onClick={handleDebugInfo} className="debug-btn">
-              Ver Info Debug
-            </button>
+      <ProtectedRoute>
+        <div className="dashboard-container">
+          <div className="loading-container">
+            <div className="loading-spinner"></div>
+            <p>Cargando tu información de reservas...</p>
+            <div className="debug-info">
+              <button onClick={handleDebugInfo} className="debug-btn">
+                Ver Info Debug
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      </ProtectedRoute>
     );
   }
 
   if (error) {
     return (
-      <div className="dashboard-container">
-        <div className="error-container">
-          <div className="error-icon">⚠️</div>
-          <h3>Error al cargar los datos</h3>
-          <p>{error}</p>
-          <div className="error-actions">
-            <button onClick={fetchUserData} className="retry-btn">
-              Reintentar
-            </button>
-            <button onClick={handleDebugInfo} className="debug-btn">
-              Ver Debug
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="dashboard-container">
-      {/* Header */}
-      <header className="dashboard-header">
-        <div className="header-content">
-          <div className="header-brand">
-            <div className="logo" onClick={() => window.location.href = '/'}>
-              <span className="logo-text">F4U</span>
-            </div>
-            <h1>Mi Dashboard</h1>
-          </div>
-          
-          <div className="header-actions">
-            <div className="user-info">
-              <div className="user-avatar">
-                {accounts[0]?.name?.charAt(0).toUpperCase() || 'U'}
-              </div>
-              <div className="user-details">
-                <span className="user-name">{accounts[0]?.name || 'Usuario'}</span>
-                <span className="user-tier">Miembro {stats.level}</span>
-              </div>
-              <button className="logout-btn" onClick={handleLogout}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                  <polyline points="16 17 21 12 16 7"/>
-                  <line x1="21" y1="12" x2="9" y2="12"/>
-                </svg>
-                Salir
+      <ProtectedRoute>
+        <div className="dashboard-container">
+          <div className="error-container">
+            <div className="error-icon">⚠️</div>
+            <h3>Error al cargar los datos</h3>
+            <p>{error}</p>
+            <div className="error-actions">
+              <button onClick={fetchUserData} className="retry-btn">
+                Reintentar
+              </button>
+              <button onClick={handleDebugInfo} className="debug-btn">
+                Ver Debug
               </button>
             </div>
           </div>
         </div>
-      </header>
+      </ProtectedRoute>
+    );
+  }
+
+  return (
+    <ProtectedRoute>
+      <div className="dashboard-container" style={{ paddingTop: '70px' }}>
+        {/* Header */}
+        <header className="site-header visible">
+          <div className="header-inner">
+            <a href="/" className="logo-link" aria-label="F4U Airlines">
+              <div className="logo-container">
+                <span className="logo-text">F4U</span>
+              </div>
+            </a>
+
+            <nav className="main-nav" aria-label="Main navigation">
+              <a href="/#products">Servicios</a>
+              <a href="/#cdt-mechanics-2">Cómo reservar</a>
+              <a href="/#contact">Contacto</a>
+              <a href="/dashboard">Mis Reservas</a>
+            </nav>
+
+            {/* Usuario en el header */}
+            <div className="header-user">
+              <div className="user-info" onClick={() => {
+                const showMenu = document.querySelector('.header-dropdown-menu');
+                if (showMenu) {
+                  showMenu.style.display = showMenu.style.display === 'none' ? 'block' : 'none';
+                }
+              }}>
+                <div className="user-avatar">
+                  {accounts[0]?.name?.charAt(0).toUpperCase() || 'U'}
+                </div>
+                <div className="user-details">
+                  <span className="user-name">{accounts[0]?.name || 'Usuario'}</span>
+                </div>
+                <svg 
+                  className="dropdown-icon"
+                  width="16" 
+                  height="16" 
+                  viewBox="0 0 16 16" 
+                  fill="currentColor"
+                >
+                  <path d="M4 6l4 4 4-4z"/>
+                </svg>
+              </div>
+
+              {/* Menú desplegable */}
+              <div className="header-dropdown-menu" style={{ display: 'none' }}>
+                <div className="menu-header">
+                  <div className="menu-user-avatar">
+                    {accounts[0]?.name?.charAt(0).toUpperCase() || 'U'}
+                  </div>
+                  <div className="menu-user-info">
+                    <div className="menu-user-name">{accounts[0]?.name || 'Usuario'}</div>
+                    <div className="menu-user-email">{accounts[0]?.username || ''}</div>
+                  </div>
+                </div>
+                
+                <div className="menu-divider" />
+                
+                <button className="menu-item" onClick={() => alert('Perfil - En desarrollo')}>
+                  <span>Mi Perfil</span>
+                </button>
+                
+                <button className="menu-item" onClick={() => window.location.href = '/dashboard'}>
+                  <span>Mis Reservas</span>
+                </button>
+                
+                <div className="menu-divider" />
+                
+                <button className="menu-item logout" onClick={handleLogout}>
+                  <span>Cerrar Sesión</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </header>
 
       <main className="dashboard-main">
         {/* Welcome Banner */}
@@ -756,86 +856,71 @@ ${userReservations.length > 0 ?
               <div className="flights-grid">
                 {userReservations.map(reservation => (
                 <div key={reservation.id} className="flight-card">
-                    {/* Flight Header - Franja azul superior */}
-                    <div className="flight-header">
-                    <span className="reservation-code">{reservation.reservationCode}</span>
-                    <div className={`flight-badge ${reservation.status.toLowerCase()}`}>
-                        {reservation.status}
+                    {/* Columna izquierda: Info básica del vuelo */}
+                    <div className="flight-info-left">
+                      <div className="flight-number">{reservation.flightNumber}</div>
+                      <div className={`flight-status ${reservation.status.toLowerCase()}`}>{reservation.status}</div>
+                      <div className="flight-duration">
+                        <span className="duration-label">Duración:</span>
+                        <span className="duration-value">{reservation.duration}</span>
+                      </div>
+                      <div className="reservation-code-small">Reserva: {reservation.reservationCode}</div>
                     </div>
-                    </div>
-                    
-                    <div className="flight-content">
-                    {/* Sección de Ruta y Horario */}
+
+                    {/* Columna central: Ruta del vuelo */}
                     <div className="flight-route">
-                        <div className="route-info">
-                        <span className="airport-code">{reservation.from}</span>
-                        <span className="city-name">{reservation.fromCity}</span>
-                        <span className="time-display">{reservation.departure}</span>
-                        <span className="date-display">{reservation.date}</span>
-                        </div>
-                        
-                        <div className="route-line">
-                        <div className="route-dots">
-                            <span></span>
-                            <span></span>
-                            <span></span>
-                        </div>
-                        <div className="plane-icon">✈️</div>
-                        <span className="flight-duration">{reservation.duration}</span>
-                        </div>
-                        
-                        <div className="route-info">
-                        <span className="airport-code">{reservation.to}</span>
-                        <span className="city-name">{reservation.toCity}</span>
-                        <span className="time-display">{reservation.arrival}</span>
-                        <span className="date-display">{reservation.date}</span>
-                        </div>
+                      <div className="flight-time">
+                        <div className="time-value">{reservation.departure}</div>
+                        <div className="city-name">{reservation.fromCity}</div>
+                        <div className="airport-code">{reservation.from}</div>
+                      </div>
+
+                      <div className="flight-path">
+                        <div className="path-line"></div>
+                        <div className="plane-icon">✈</div>
+                      </div>
+
+                      <div className="flight-time">
+                        <div className="time-value">{reservation.arrival}</div>
+                        <div className="city-name">{reservation.toCity}</div>
+                        <div className="airport-code">{reservation.to}</div>
+                      </div>
                     </div>
-                    
-                    {/* Información del Pasajero */}
-                    <div className="passenger-info">
-                        <span className="passenger-name">{reservation.passengerName}</span>
-                        <span className="passenger-email">{reservation.passengerEmail}</span>
-                        <span className="travel-class">{reservation.travelClass}</span>
-                    </div>
-                    
-                    {/* Detalles del Vuelo */}
-                    <div className="flight-details">
-                        <span className="flight-number">{reservation.flightNumber}</span>
-                        <div className="detail-item">
-                        <span className="detail-label">Terminal</span>
-                        <span className="detail-value">{reservation.terminal}</span>
+
+                    {/* Columna derecha: Info del pasajero y acciones */}
+                    <div className="flight-prices">
+                      <div className="price-option">
+                        <div>
+                          <div className="price-class">{reservation.travelClass}</div>
+                          <div className="price-seats">{reservation.passengerName}</div>
                         </div>
-                        <div className="detail-item">
-                        <span className="detail-label">Puerta</span>
-                        <span className="detail-value">{reservation.gate}</span>
-                        </div>
-                    </div>
-                    </div>
-                    
-                    <div className="flight-footer">
-                    <span className="flight-price">{reservation.price}</span>
-                    <div className="flight-actions">
+                        <div className="price-amount">{reservation.price}</div>
+                      </div>
+                      <div className="flight-actions">
                         <button 
-                        className="action-btn secondary"
-                        onClick={() => handleViewDetails(reservation)}
+                          className="action-btn secondary"
+                          onClick={() => handleViewDetails(reservation)}
                         >
-                        Detalles
+                          Detalles
                         </button>
                         <button 
-                        className="action-btn primary"
-                        onClick={() => handleCheckIn(reservation.id)}
+                          className="action-btn primary"
+                          onClick={() => handleCheckIn(reservation.id)}
                         >
-                        Check-in
+                          Check-in
                         </button>
-                    </div>
+                      </div>
                     </div>
                 </div>
                 ))}
               </div>
             ) : (
               <div className="no-flights">
-                <div className="no-flights-icon">✈️</div>
+                <div className="no-flights-icon">
+                  <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 1 3-1v-2l3-3 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.1z"/>
+                  </svg>
+                </div>
                 <h3>No tienes reservas activas</h3>
                 <p>Comienza tu próxima aventura reservando un vuelo</p>
                 <div className="no-flights-actions">
@@ -861,7 +946,13 @@ ${userReservations.length > 0 ?
             {/* Airport Status - Solo si tenemos datos reales */}
             {userReservations.length > 0 && (
               <div className="sidebar-card">
-                <h3>📍 Estado del Aeropuerto</h3>
+                <h3>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display: 'inline-block', marginRight: '8px', verticalAlign: 'middle'}}>
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                  </svg>
+                  Estado del Aeropuerto
+                </h3>
                 <div className="airport-status">
                   <div className="airport-info">
                     <h4>
@@ -888,18 +979,33 @@ ${userReservations.length > 0 ?
 
             {/* Quick Actions */}
             <div className="sidebar-card">
-              <h3>🚀 Acciones Rápidas</h3>
+              <h3>Acciones Rápidas</h3>
               <div className="quick-actions">
                 <button className="quick-btn" onClick={() => window.location.href = '/'}>
-                  <span className="btn-icon">🎫</span>
+                  <span className="btn-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="2" y="5" width="20" height="14" rx="2"/>
+                      <line x1="2" y1="10" x2="22" y2="10"/>
+                    </svg>
+                  </span>
                   <span>Nueva Reserva</span>
                 </button>
                 <button className="quick-btn" onClick={fetchUserData}>
-                  <span className="btn-icon">🔄</span>
+                  <span className="btn-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                    </svg>
+                  </span>
                   <span>Actualizar</span>
                 </button>
                 <button className="quick-btn" onClick={handleDebugInfo}>
-                  <span className="btn-icon">🐛</span>
+                  <span className="btn-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="m8 2 1.88 1.88M14.12 3.88 16 2M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"/>
+                      <path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6Z"/>
+                      <path d="M12 20v-9m-4 3h8m-8 4h8"/>
+                    </svg>
+                  </span>
                   <span>Debug Info</span>
                 </button>
               </div>
@@ -908,7 +1014,7 @@ ${userReservations.length > 0 ?
             {/* Info Card */}
             <div className="sidebar-card info-card">
               <div className="info-content">
-                <h3>ℹ️ Información del Sistema</h3>
+                <h3>Información del Sistema</h3>
                 <div className="info-stats">
                   <div className="info-item">
                     <span>Endpoints probados:</span>
@@ -929,7 +1035,7 @@ ${userReservations.length > 0 ?
             {/* Weather Card */}
             {(weatherData.origin || weatherData.destination) && (
               <div className="sidebar-card weather-card">
-                <h3>🌤️ Clima de tu Viaje</h3>
+                <h3>Clima de tu Viaje</h3>
                 
                 {weatherData.origin && (
                   <div className="weather-section">
@@ -980,7 +1086,7 @@ ${userReservations.length > 0 ?
             {/* Route to Airport Card */}
             {routeData.userLocation && routeData.airportLocation && !routeData.loading && (
               <div className="sidebar-card route-card">
-                <h3>🗺️ Ruta al Aeropuerto</h3>
+                <h3>Ruta al Aeropuerto</h3>
                 
                 <div className="route-section">
                   {/* Mini mapa visual de la ruta */}
@@ -1052,6 +1158,7 @@ ${userReservations.length > 0 ?
           </aside>
         </div>
       </main>
-    </div>
+      </div>
+    </ProtectedRoute>
   );
 }

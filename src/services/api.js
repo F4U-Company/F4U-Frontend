@@ -52,14 +52,42 @@ api.interceptors.request.use(
       '/api/debug/public'
     ];
     
+    // Endpoints que requieren autenticación obligatoria
+    const protectedEndpoints = [
+      '/api/auth/me',
+      '/api/auth/validate-token',
+      '/api/auth/roles',
+      '/api/reservaciones/usuario',
+      '/api/dashboard',
+      '/api/user',
+      '/api/payments'
+    ];
+    
     // Verificar si la URL es un endpoint público
     const isPublicEndpoint = publicEndpoints.some(endpoint => 
       config.url?.startsWith(endpoint)
     );
     
+    // Verificar si la URL es un endpoint protegido
+    const isProtectedEndpoint = protectedEndpoints.some(endpoint => 
+      config.url?.startsWith(endpoint)
+    );
+    
+    const token = sessionStorage.getItem('accessToken');
+    
+    // Si es un endpoint protegido y no hay token, rechazar la petición
+    if (isProtectedEndpoint && !token) {
+      console.error('🚫 Acceso denegado: Endpoint protegido sin token:', config.url);
+      const error = new Error('No autorizado: Se requiere autenticación');
+      error.response = {
+        status: 401,
+        data: { message: 'No autorizado: Se requiere autenticación' }
+      };
+      return Promise.reject(error);
+    }
+    
     // Solo agregar el token si NO es un endpoint público
     if (!isPublicEndpoint) {
-      const token = sessionStorage.getItem('accessToken');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
         if (import.meta.env.DEV) {
@@ -107,6 +135,7 @@ api.interceptors.response.use(
         '/actuator/', 
         '/api/flights/', 
         '/api/cities/',
+        '/api/reservaciones/',
         '/api/debug/public'
       ];
       const isPublicEndpoint = publicEndpoints.some(endpoint => url.includes(endpoint));

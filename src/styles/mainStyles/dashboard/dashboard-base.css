@@ -4,14 +4,14 @@
 
 .dashboard-container {
   min-height: 100vh;
-  background: #ffffff;
-  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
-  color: #1a202c;
+  background: var(--bg-secondary);
+  font-family: 'Graphik-Regular', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--text-primary);
 }
 
 .dashboard-main {
   padding: 2rem;
-  max-width: 1400px;
+  max-width: var(--max-width);
   margin: 0 auto;
 }
 
@@ -32,11 +32,11 @@
 }
 
 .section-header h2 {
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: #1a202c;
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
   margin: 0;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Graphik-Medium', sans-serif;
 }
 
 .section-actions {
@@ -46,18 +46,19 @@
 }
 
 .view-all-btn {
-  background: #0056b3;
-  color: white;
+  background: linear-gradient(135deg, #004499, #1a2b4c);
+  color: var(--text-white);
   border: none;
   padding: 0.6rem 1.25rem;
-  border-radius: 8px;
-  font-weight: 600;
+  border-radius: var(--border-radius-md);
+  font-weight: var(--font-weight-semibold);
   cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 0.85rem;
+  transition: var(--transition-fast);
+  font-size: var(--font-size-sm);
 }
 
 .view-all-btn:hover {
-  background: #004494;
-  transform: translateY(-1px);
+  background: linear-gradient(135deg, #1a2b4c, #003377);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 68, 153, 0.3);
 }
