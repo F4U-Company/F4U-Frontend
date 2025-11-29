@@ -38,10 +38,9 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-2
 
-      # En el paso "Deploy to S3" - AGREGA --acl public-read
       - name: Deploy to S3
         run: |
-          aws s3 sync dist/ s3://f4u-frontend-prod --delete --acl public-read
+          aws s3 sync dist/ s3://f4u-frontend-prod --delete
 
       - name: Invalidate CloudFront cache
         run: |
