@@ -52,4 +52,4 @@ jobs:
         run: |
           echo "✅ Frontend desplegado exitosamente"
           echo "🌐 URL de producción: https://d34hoxniq2n0jw.cloudfront.net"
-          echo " API Backend: ${{ secrets.VITE_API_URL }}"
+          echo "🔗 API Backend: ${{ secrets.VITE_API_URL }}"
