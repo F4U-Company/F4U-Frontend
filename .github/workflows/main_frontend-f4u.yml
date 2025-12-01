@@ -1,189 +1,102 @@
-# Ve a tu directorio del proyecto
-cd "C:\Users\AGsan\Downloads\F4U-Frontend-main (2)\F4U-Frontend-main"
-
-# Crea el directorio de workflows si no existe
-mkdir -Force .github\workflows
-
-# Crea el archivo YML con el nuevo workflow
 @"
-name: Deploy Frontend to AWS S3 & CloudFront
+name: Deploy Frontend to AWS S3
 
 on:
   push:
-    branches:
-      - main
-    paths:
-      - '**'
+    branches: [main]
 
 jobs:
-  deploy-prod:
+  deploy:
     runs-on: ubuntu-latest
-    environment: Production
     
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: package-lock.json
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
 
-      - name: Install dependencies
-        run: npm ci
+    - name: Install dependencies
+      run: npm ci
 
-      - name: Build React app
-        run: npm run build
-        env:
-          VITE_API_URL: \${{ secrets.VITE_API_URL }}
+    - name: Configure for Demo Mode
+      run: |
+        # Usa tu backend EC2
+        echo "VITE_API_URL=http://18.220.74.7:5000/api" > .env
+        
+        # Crea configuración simplificada sin Azure AD
+        cat > src/authConfig.js << 'EOF'
+        // MODO DEMO - Sin Azure AD
+        export const getToken = async () => {
+          console.log('🔓 MODO DEMO: Sin autenticación');
+          return 'demo-token';
+        };
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: \${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: \${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-2
+        export const isAuthenticated = () => true;
 
-      - name: Deploy to S3 (Production)
-        run: |
-          aws s3 sync dist/ s3://f4u-frontend-prod --delete
+        export const msalInstance = {
+          acquireTokenSilent: async () => ({ accessToken: 'demo-token' }),
+          getAllAccounts: () => [{ username: 'demo@example.com' }],
+          handleRedirectPromise: () => Promise.resolve(null),
+          loginRedirect: () => console.log('Demo login'),
+          logout: () => console.log('Demo logout'),
+        };
 
-      - name: Invalidate CloudFront cache
-        run: |
-          aws cloudfront create-invalidation \
-            --distribution-id \${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
-            --paths "/*"
+        export const msalConfig = {
+          auth: {
+            clientId: 'demo-mode',
+            authority: 'https://login.microsoftonline.com/common',
+            redirectUri: window.location.origin,
+          }
+        };
 
-      - name: Verify deployment
-        run: |
-          echo "✅ Frontend PRODUCCIÓN desplegado exitosamente"
-          echo "🌐 URL de producción: https://d34hoxniq2n0jw.cloudfront.net"
-          echo "🔗 API Backend: \${{ secrets.VITE_API_URL }}"
+        export const loginRequest = {
+          scopes: ['User.Read']
+        };
+        EOF
 
-  deploy-demo:
-    runs-on: ubuntu-latest
-    needs: deploy-prod  # Se ejecuta después del deploy de producción
-    environment: Demo
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Build React app
+      run: npm run build
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: package-lock.json
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-2
 
-      - name: Install dependencies
-        run: npm ci
+    - name: Deploy to S3 Demo Bucket
+      run: |
+        aws s3 sync dist/ s3://f4u-frontend-demo --delete --acl public-read
+        
+        # Configurar hosting estático
+        aws s3 website s3://f4u-frontend-demo \
+          --index-document index.html \
+          --error-document index.html
+        
+        # Configurar política pública
+        aws s3api put-bucket-policy \
+          --bucket f4u-frontend-demo \
+          --policy '{
+            "Version": "2012-10-17",
+            "Statement": [{
+              "Sid": "PublicReadGetObject",
+              "Effect": "Allow",
+              "Principal": "*",
+              "Action": "s3:GetObject",
+              "Resource": "arn:aws:s3:::f4u-frontend-demo/*"
+            }]
+          }'
 
-      - name: Create demo configuration
-        run: |
-          # Crea un archivo .env específico para demo
-          echo "VITE_API_URL=http://18.220.74.7:5000/api" > .env
-          echo "VITE_DEMO_MODE=true" >> .env
-          echo "VITE_AZURE_AD_ENABLED=false" >> .env
-          
-          # Modifica temporalmente el authConfig.js para demo
-          cat << 'EOF' > src/authConfig.js
-          // Configuración DEMO - Sin autenticación Azure AD
-          export const msalConfig = {
-            auth: {
-              clientId: "demo-mode",
-              authority: "https://login.microsoftonline.com/common",
-              redirectUri: window.location.origin,
-              postLogoutRedirectUri: window.location.origin,
-            },
-            cache: {
-              cacheLocation: "sessionStorage",
-              storeAuthStateInCookie: false,
-            }
-          };
-
-          export const loginRequest = {
-            scopes: ["User.Read"]
-          };
-
-          // En modo demo, siempre retorna null (sin autenticación)
-          export const getToken = async () => {
-            console.log('🔓 Modo DEMO: Sin autenticación Azure AD');
-            return null;
-          };
-
-          // En modo demo, siempre está autenticado
-          export const isAuthenticated = () => {
-            return true;
-          };
-
-          export const msalInstance = {
-            acquireTokenSilent: async () => ({ accessToken: 'demo-token' }),
-            getAllAccounts: () => [{ username: 'demo-user@example.com' }],
-            handleRedirectPromise: () => Promise.resolve(null),
-            loginRedirect: () => console.log('Demo mode - redirect login'),
-            logout: () => console.log('Demo mode - logout'),
-          };
-          EOF
-
-      - name: Build React app for Demo
-        run: |
-          npm run build
-          echo "✅ Build completado para DEMO"
-
-      - name: Configure AWS credentials for Demo
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: \${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: \${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-2
-
-      - name: Deploy to S3 Demo bucket
-        run: |
-          echo "🚀 Desplegando a bucket de demo..."
-          aws s3 sync dist/ s3://f4u-frontend-demo --delete --acl public-read
-          
-          # Listar archivos desplegados
-          echo "📁 Archivos en S3 Demo:"
-          aws s3 ls s3://f4u-frontend-demo --recursive --human-readable
-
-      - name: Enable Static Website Hosting
-        run: |
-          aws s3 website s3://f4u-frontend-demo \
-            --index-document index.html \
-            --error-document index.html
-
-      - name: Set Bucket Policy for Public Access
-        run: |
-          aws s3api put-bucket-policy \
-            --bucket f4u-frontend-demo \
-            --policy '{
-              "Version": "2012-10-17",
-              "Statement": [
-                {
-                  "Sid": "PublicReadGetObject",
-                  "Effect": "Allow",
-                  "Principal": "*",
-                  "Action": "s3:GetObject",
-                  "Resource": "arn:aws:s3:::f4u-frontend-demo/*"
-                }
-              ]
-            }'
-
-      - name: Verify Demo Deployment
-        run: |
-          echo "✅ DEMO desplegada exitosamente!"
-          echo "🌐 URL DEMO: http://f4u-frontend-demo.s3-website.us-east-2.amazonaws.com"
-          echo "🔗 Backend EC2: http://18.220.74.7:5000/api"
-          echo "🔓 Modo: Sin autenticación Azure AD"
-          echo ""
-          echo "📋 Para probar:"
-          echo "1. Abre: http://f4u-frontend-demo.s3-website.us-east-2.amazonaws.com"
-          echo "2. Usa la consola del navegador (F12) para verificar la conexión"
-          echo "3. Si hay problemas de CORS, verifica el backend está aceptando el origen"
+    - name: Verify Deployment
+      run: |
+        echo "✅ ¡Despliegue completado!"
+        echo "🌐 URL de tu aplicación: http://f4u-frontend-demo.s3-website.us-east-2.amazonaws.com"
+        echo "🔗 Backend conectado: http://18.220.74.7:5000/api"
+        echo ""
+        echo "Para probar:"
+        echo "1. Abre la URL en tu navegador"
+        echo "2. Presiona F12 para abrir la consola"
+        echo "3. Verifica que no haya errores de CORS"
 "@ | Out-File -FilePath .github\workflows\deploy.yml -Encoding UTF8
-
-# Verifica que el archivo se creó
-Get-Content .github\workflows\deploy.yml -First 10
