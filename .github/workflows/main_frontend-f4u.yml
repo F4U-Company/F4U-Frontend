@@ -22,10 +22,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Create Vite env (point to EC2 backend)
+      - name: Create Vite env (point to CloudFront)  # ✅ CAMBIADO
         run: |
-          echo "VITE_API_URL=http://18.220.74.7:5000/api" > .env.production
-          echo "VITE_API_URL=http://18.220.74.7:5000/api" > .env
+          # Usa la variable de GitHub configurada
+          echo "VITE_API_URL=${{ vars.VITE_API_URL }}" > .env.production
+          echo "VITE_API_URL=${{ vars.VITE_API_URL }}" > .env
 
       - name: Build (Vite)
         run: npm run build
@@ -44,16 +45,13 @@ jobs:
       - name: Sync build to S3
         run: |
           if [ -d "dist" ]; then BUILD_DIR="dist"; else BUILD_DIR="build"; fi
-          # SOLO --delete, sin --acl
           aws s3 sync "$BUILD_DIR/" s3://f4u-frontend-demo --delete
           aws s3 ls s3://f4u-frontend-demo --recursive | head -n 20 || true
 
       - name: Configure S3 website + policy
         run: |
-          # Configurar sitio web estático
           aws s3 website s3://f4u-frontend-demo --index-document index.html --error-document index.html || true
           
-          # Crear archivo de política
           echo '{
             "Version":"2012-10-17",
             "Statement":[
@@ -69,12 +67,17 @@ jobs:
           
           aws s3api put-bucket-policy --bucket f4u-frontend-demo --policy file:///tmp/f4u_policy.json || true
 
-      - name: Check backend reachability
+      - name: Check CloudFront API reachability  # ✅ CAMBIADO
         run: |
-          curl -I --max-time 10 http://18.220.74.7:5000/api/health || echo "Backend no disponible desde runner"
+          curl -I --max-time 10 https://d34hoxniq2n0jw.cloudfront.net/api/health || echo "CloudFront API no disponible desde runner"
+
+      - name: Invalidate CloudFront cache  # ✅ AÑADIR ESTE STEP
+        run: |
+          aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
 
       - name: Finish
         run: |
           echo "✅ Frontend desplegado en S3"
-          echo "🌐 URL del Frontend: http://f4u-frontend-demo.s3-website.us-east-2.amazonaws.com"
-          echo "🔗 API Backend: http://18.220.74.7:5000/api"
+          echo "🌐 URL del Frontend (S3): http://f4u-frontend-demo.s3-website.us-east-2.amazonaws.com"
+          echo "☁️  URL del Frontend (CloudFront): https://d34hoxniq2n0jw.cloudfront.net"
+          echo "🔗 API Backend (via CloudFront): https://d34hoxniq2n0jw.cloudfront.net/api"
