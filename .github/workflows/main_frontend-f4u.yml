@@ -1,37 +1,55 @@
-# Crea un workflow limpio y simple
-$workflowContent = @'
+# ELIMINA el workflow malo
+Remove-Item .github\workflows\main_frontend-f4u.yml -Force
+
+# CREA un workflow CORRECTO y SIMPLE
+@'
 name: 🚀 Deploy to AWS S3 Demo
 
 on:
   push:
     branches: [main]
-  workflow_dispatch:  # Permite ejecución manual
+  workflow_dispatch:  # Permite ejecución manual desde GitHub
 
 jobs:
-  deploy-demo:
+  build-and-deploy:
     runs-on: ubuntu-latest
     
     steps:
     - name: 📥 Checkout code
       uses: actions/checkout@v4
 
-    - name: 📦 Setup Node.js
+    - name: 📦 Setup Node.js 18
       uses: actions/setup-node@v4
       with:
         node-version: 18
+        cache: 'npm'
 
     - name: 📚 Install dependencies
       run: npm ci
 
-    - name: ⚙️ Configure Demo Environment
+    - name: ⚙️ Configure for EC2 Backend
       run: |
+        # Configura el backend EC2
         echo "VITE_API_URL=http://18.220.74.7:5000/api" > .env
-        echo "Configuración de entorno lista ✅"
+        
+        # Simplifica authConfig para demo (sin Azure AD)
+        cat > src/authConfig.js << 'EOF'
+        // MODO DEMO - Sin Azure AD
+        export const getToken = async () => {
+          console.log('🔓 MODO DEMO: Sin autenticación');
+          return 'demo-token';
+        };
+        export const isAuthenticated = () => true;
+        export const msalInstance = {
+          acquireTokenSilent: async () => ({ accessToken: 'demo-token' }),
+          getAllAccounts: () => [{ username: 'demo@example.com' }],
+        };
+        export const msalConfig = {};
+        export const loginRequest = {};
+        EOF
 
     - name: 🔨 Build React App
-      run: |
-        npm run build
-        echo "Build completado ✅"
+      run: npm run build
 
     - name: 🔐 Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v4
@@ -40,39 +58,51 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: us-east-2
 
-    - name: ☁️ Upload to S3
+    - name: ☁️ Upload to S3 Bucket
       run: |
         echo "Subiendo archivos a S3..."
         aws s3 sync dist/ s3://f4u-frontend-demo --delete --acl public-read
-        echo "✅ Archivos subidos"
+        echo "✅ Archivos subidos a S3"
 
-    - name: 🌐 Configure Static Hosting
+    - name: 🌐 Configure Static Website
       run: |
-        echo "Configurando hosting estático..."
+        # Configurar hosting estático
         aws s3 website s3://f4u-frontend-demo \
           --index-document index.html \
           --error-document index.html
-        echo "✅ Hosting configurado"
+        
+        # Configurar política de acceso público
+        aws s3api put-bucket-policy \
+          --bucket f4u-frontend-demo \
+          --policy '{
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Sid": "PublicReadGetObject",
+                "Effect": "Allow",
+                "Principal": "*",
+                "Action": "s3:GetObject",
+                "Resource": "arn:aws:s3:::f4u-frontend-demo/*"
+              }
+            ]
+          }'
+        echo "✅ Hosting estático configurado"
 
     - name: ✅ Verify Deployment
       run: |
-        echo "=========================================="
-        echo "🚀 ¡DESPLIEGUE COMPLETADO!"
-        echo "=========================================="
+        echo "========================================"
+        echo "🚀 ¡DESPLIEGUE EXITOSO!"
+        echo "========================================"
         echo "🌐 URL de tu aplicación:"
-        echo "   http://f4u-frontend-demo.s3-website.us-east-2.amazonaws.com"
+        echo "http://f4u-frontend-demo.s3-website.us-east-2.amazonaws.com"
         echo ""
         echo "🔗 Backend EC2:"
-        echo "   http://18.220.74.7:5000/api"
+        echo "http://18.220.74.7:5000/api"
         echo ""
-        echo "📊 Para verificar:"
-        echo "   1. Abre la URL en tu navegador"
-        echo "   2. Presiona F12 → Console"
-        echo "   3. Deberías ver la aplicación React"
-        echo "=========================================="
-'@
-
-# Guarda el workflow
-$workflowContent | Out-File -FilePath .github\workflows\deploy-demo.yml -Encoding UTF8
-
-Write-Host "✅ Workflow creado: .github\workflows\deploy-demo.yml" -ForegroundColor Green
+        echo "📋 Para probar:"
+        echo "1. Abre la URL en tu navegador"
+        echo "2. Presiona F12 → Console"
+        echo "3. Ejecuta: fetch('http://18.220.74.7:5000/api/cities')"
+        echo "4. Deberías ver las ciudades del backend"
+        echo "========================================"
+'@ | Out-File -FilePath .github\workflows\deploy-aws.yml -Encoding UTF8
