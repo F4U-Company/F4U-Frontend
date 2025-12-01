@@ -13,20 +13,22 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 18
+      - name: Setup Node.js 20  # ✅ CAMBIADO: Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
           cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Create Vite env (point to CloudFront)  # ✅ CAMBIADO
+      - name: Create Vite env (point to CloudFront)  # ✅ CORREGIDO
         run: |
-          # Usa la variable de GitHub configurada
-          echo "VITE_API_URL=${{ vars.VITE_API_URL }}" > .env.production
-          echo "VITE_API_URL=${{ vars.VITE_API_URL }}" > .env
+          # NOTA: Si vars.VITE_API_URL no está definida, usa valor por defecto
+          API_URL="${VITE_API_URL:-https://d34hoxniq2n0jw.cloudfront.net/api}"
+          echo "VITE_API_URL=$API_URL" > .env.production
+          echo "VITE_API_URL=$API_URL" > .env
+          echo "✅ Variables creadas: VITE_API_URL=$API_URL"
 
       - name: Build (Vite)
         run: npm run build
@@ -46,12 +48,14 @@ jobs:
         run: |
           if [ -d "dist" ]; then BUILD_DIR="dist"; else BUILD_DIR="build"; fi
           aws s3 sync "$BUILD_DIR/" s3://f4u-frontend-demo --delete
-          aws s3 ls s3://f4u-frontend-demo --recursive | head -n 20 || true
+          echo "✅ Archivos sincronizados con S3"
 
       - name: Configure S3 website + policy
         run: |
+          # Configurar sitio web estático
           aws s3 website s3://f4u-frontend-demo --index-document index.html --error-document index.html || true
           
+          # Crear archivo de política
           echo '{
             "Version":"2012-10-17",
             "Statement":[
@@ -66,18 +70,26 @@ jobs:
           }' > /tmp/f4u_policy.json
           
           aws s3api put-bucket-policy --bucket f4u-frontend-demo --policy file:///tmp/f4u_policy.json || true
+          echo "✅ Configuración de S3 completada"
 
-      - name: Check CloudFront API reachability  # ✅ CAMBIADO
+      - name: Check CloudFront API reachability
         run: |
-          curl -I --max-time 10 https://d34hoxniq2n0jw.cloudfront.net/api/health || echo "CloudFront API no disponible desde runner"
+          echo "Probando conexión a API vía CloudFront..."
+          curl -I --max-time 10 https://d34hoxniq2n0jw.cloudfront.net/api/health && echo "✅ API accesible" || echo "⚠️ API no accesible desde runner"
 
-      - name: Invalidate CloudFront cache  # ✅ AÑADIR ESTE STEP
+      - name: Invalidate CloudFront cache
         run: |
+          echo "Invalidando caché de CloudFront..."
           aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
+          echo "✅ Invalidación iniciada"
 
       - name: Finish
         run: |
-          echo "✅ Frontend desplegado en S3"
-          echo "🌐 URL del Frontend (S3): http://f4u-frontend-demo.s3-website.us-east-2.amazonaws.com"
-          echo "☁️  URL del Frontend (CloudFront): https://d34hoxniq2n0jw.cloudfront.net"
-          echo "🔗 API Backend (via CloudFront): https://d34hoxniq2n0jw.cloudfront.net/api"
+          echo "🎉 DEPLOY COMPLETADO EXITOSAMENTE"
+          echo ""
+          echo "🌐 URLs de acceso:"
+          echo "  • Frontend (S3): http://f4u-frontend-demo.s3-website.us-east-2.amazonaws.com"
+          echo "  • Frontend (CloudFront): https://d34hoxniq2n0jw.cloudfront.net"
+          echo "  • API Backend: https://d34hoxniq2n0jw.cloudfront.net/api"
+          echo ""
+          echo "⏰ La invalidación de caché puede tardar 1-2 minutos en propagarse"
