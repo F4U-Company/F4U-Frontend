@@ -47,7 +47,8 @@ export default function App() {
   // Estados para autenticación
   const isAuthenticated = useIsAuthenticated();
   const { instance, accounts } = useMsal();
-  const [tokenSaved, setTokenSaved] = useState(false);
+  // CORRECCIÓN: Eliminamos el estado tokenSaved y usamos una referencia
+  const tokenSavedRef = useRef(false);
 
   // Cargar ciudades desde la API
   useEffect(() => {
@@ -283,19 +284,24 @@ export default function App() {
     return () => clearInterval(heroInterval);
   }, []);
 
-  // Efecto para autenticación
+  // Efecto para autenticación - CORREGIDO
   useEffect(() => {
     console.log('📱 App.jsx useEffect ejecutado:', {
       isAuthenticated,
       accountsLength: accounts.length,
-      tokenSaved,
       hasToken: !!sessionStorage.getItem('accessToken'),
       timestamp: new Date().toLocaleTimeString()
     });
 
     // Guardar el token JWT cuando el usuario se autentica
     const saveAccessToken = async () => {
-      if (accounts.length > 0 && !tokenSaved) {
+      // Si ya hay token, no hacer nada
+      if (sessionStorage.getItem('accessToken')) {
+        console.log('✅ Token ya existe en sessionStorage');
+        return;
+      }
+      
+      if (accounts.length > 0 && !tokenSavedRef.current) {
         console.log('🔑 App.jsx: Intentando obtener token silenciosamente...');
         try {
           const response = await instance.acquireTokenSilent({
@@ -310,31 +316,13 @@ export default function App() {
               account: response.account.username
             });
             sessionStorage.setItem('accessToken', response.accessToken);
-            setTokenSaved(true);
+            tokenSavedRef.current = true;
             console.log('✅ Token guardado en useEffect');
           }
         } catch (error) {
           console.error('⚠️ Error al obtener token silenciosamente:', error.message);
-          // Si falla silently, intentar con popup
-          try {
-            console.log('🔑 App.jsx: Intentando con popup...');
-            const popupResponse = await instance.acquireTokenPopup({
-              ...loginRequest,
-              account: accounts[0]
-            });
-            if (popupResponse && popupResponse.accessToken) {
-              console.log('✅ App.jsx: Token obtenido por popup:', {
-                hasAccessToken: !!popupResponse.accessToken,
-                expiresOn: popupResponse.expiresOn,
-                account: popupResponse.account.username
-              });
-              sessionStorage.setItem('accessToken', popupResponse.accessToken);
-              setTokenSaved(true);
-              console.log('✅ Token guardado mediante popup');
-            }
-          } catch (popupError) {
-            console.error('❌ Error al obtener token con popup:', popupError);
-          }
+          // Si falla silently, NO intentar con popup automáticamente para evitar bucles
+          // El popup solo debe abrirse cuando el usuario hace clic en "Iniciar Sesión"
         }
       }
     };
@@ -342,7 +330,7 @@ export default function App() {
     if (isAuthenticated) {
       saveAccessToken();
     }
-  }, [isAuthenticated, accounts, instance, tokenSaved]);
+  }, [isAuthenticated, accounts, instance]); // ¡IMPORTANTE: Sin tokenSaved en las dependencias!
 
   // Nota: El asiento bloqueado permanece bloqueado por 15 minutos
   // Se liberará automáticamente en el backend o al completar el pago
@@ -554,7 +542,14 @@ export default function App() {
     }
   ];
 
-  console.log('🎨 App.jsx Render:', { isAuthenticated, timestamp: new Date().toLocaleTimeString() });
+  // CORRECCIÓN: Solo mostrar log en desarrollo
+  if (import.meta.env.DEV) {
+    console.log('🎨 App.jsx Render:', { 
+      isAuthenticated, 
+      accounts: accounts.length,
+      timestamp: new Date().toLocaleTimeString() 
+    });
+  }
 
   return (
     <div className="site-root" style={{ paddingTop: '70px' }}>
