@@ -12,45 +12,41 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: 📦 Setup Node.js 18
+      - name: Setup Node.js 18
         uses: actions/setup-node@v4
         with:
           node-version: 18
           cache: 'npm'
 
-      - name: 📚 Install dependencies
+      - name: Install dependencies
         run: npm ci
 
-      - name: ⚙️ Create Vite env for production (point to EC2 backend)
+      - name: Create Vite env (point to EC2 backend)
         run: |
-          echo "VITE_API_URL=http://18.220.74.7:5000/api" > .env.production
-          echo "VITE_API_URL=http://18.220.74.7:5000/api" > .env
+          echo "VITE_API_URL=http://ec2-18-220-74-7.us-east-2.compute.amazonaws.com:5000/api" > .env.production
+          echo "VITE_API_URL=http://ec2-18-220-74-7.us-east-2.compute.amazonaws.com:5000/api" > .env
 
-      - name: 🔨 Build React (Vite)
+      - name: Build (Vite)
         run: npm run build
 
-      - name: 🔎 Show build output (debug)
+      - name: Show build output (debug)
         run: |
-          echo "Contenido del repo:"
-          ls -la
-          echo "Contenido de la carpeta de build (dist o build):"
           if [ -d "dist" ]; then ls -la dist; else ls -la build || true; fi
 
-      - name: 🔐 Configure AWS Credentials
+      - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-2
 
-      - name: Sync build to S3 (f4u-frontend-demo)
+      - name: Sync build to S3
         run: |
           if [ -d "dist" ]; then BUILD_DIR="dist"; else BUILD_DIR="build"; fi
-          echo "Sincronizando $BUILD_DIR -> s3://f4u-frontend-demo"
           aws s3 sync "$BUILD_DIR/" s3://f4u-frontend-demo --delete --acl public-read
           aws s3 ls s3://f4u-frontend-demo --recursive | head -n 20 || true
 
-      - name: Configure S3 static website + bucket policy
+      - name: Configure S3 website + policy
         run: |
           aws s3 website s3://f4u-frontend-demo --index-document index.html --error-document index.html || true
           cat > /tmp/f4u_policy.json <<'POL'
@@ -68,13 +64,12 @@ jobs:
 }
 POL
           aws s3api put-bucket-policy --bucket f4u-frontend-demo --policy file:///tmp/f4u_policy.json || true
-          echo "✅ S3 configurado como sitio estático: http://f4u-frontend-demo.s3-website.us-east-2.amazonaws.com"
 
-      - name: 🔎 Check backend reachability (no-falla)
+      - name: Check backend reachability (no-falla)
         run: |
-          curl -I --max-time 10 http://18.220.74.7:5000/api/health || echo "Backend no disponible"
+          curl -I --max-time 10 http://18.220.74.7:5000/api/health || echo "Backend no disponible desde runner"
 
-      - name: ✅ Finish
+      - name: Finish
         run: |
-          echo "Frontend URL: http://f4u-frontend-demo.s3-website.us-east-2.amazonaws.com"
-          echo "Backend: http://18.220.74.7:5000/api"
+          echo "Frontend: http://f4u-frontend-demo.s3-website.us-east-2.amazonaws.com"
+          echo "Backend: http://ec2-18-220-74-7.us-east-2.compute.amazonaws.com:5000/api"
