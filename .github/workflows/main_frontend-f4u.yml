@@ -91,7 +91,7 @@ jobs:
 
     - name: Verify Deployment
       run: |
-        echo "✅ ¡Despliegue completado!"
+        echo " ¡Despliegue completado!"
         echo "🌐 URL de tu aplicación: http://f4u-frontend-demo.s3-website.us-east-2.amazonaws.com"
         echo "🔗 Backend conectado: http://18.220.74.7:5000/api"
         echo ""
