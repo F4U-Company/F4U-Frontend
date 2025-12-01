@@ -87,9 +87,9 @@ jobs:
         run: |
           echo "🎉 DEPLOY COMPLETADO EXITOSAMENTE"
           echo ""
-          echo "🌐 URLs de acceso:"
+          echo " URLs de acceso:"
           echo "  • Frontend (S3): http://f4u-frontend-demo.s3-website.us-east-2.amazonaws.com"
           echo "  • Frontend (CloudFront): https://d34hoxniq2n0jw.cloudfront.net"
           echo "  • API Backend: https://d34hoxniq2n0jw.cloudfront.net/api"
           echo ""
-          echo "⏰ La invalidación de caché puede tardar 1-2 minutos en propagarse"
+          echo " La invalidación de caché puede tardar 1-2 minutos en propagarse"
