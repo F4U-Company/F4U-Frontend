@@ -44,7 +44,8 @@ jobs:
       - name: Sync build to S3
         run: |
           if [ -d "dist" ]; then BUILD_DIR="dist"; else BUILD_DIR="build"; fi
-          aws s3 sync "$BUILD_DIR/" s3://f4u-frontend-demo --delete --acl public-read
+          # SOLO --delete, sin --acl
+          aws s3 sync "$BUILD_DIR/" s3://f4u-frontend-demo --delete
           aws s3 ls s3://f4u-frontend-demo --recursive | head -n 20 || true
 
       - name: Configure S3 website + policy
@@ -52,7 +53,7 @@ jobs:
           # Configurar sitio web estático
           aws s3 website s3://f4u-frontend-demo --index-document index.html --error-document index.html || true
           
-          # Crear archivo de política - VERSIÓN CORREGIDA
+          # Crear archivo de política
           echo '{
             "Version":"2012-10-17",
             "Statement":[
