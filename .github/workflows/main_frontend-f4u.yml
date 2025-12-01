@@ -10,7 +10,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: Production
+    environment: Production # ⚠️ Vite genera 'dist', no 'build'
 
     steps:
       - name: Checkout code
@@ -46,7 +46,7 @@ jobs:
         run: |
           aws cloudfront create-invalidation \
             --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
-            --paths "/*"
+            --paths "/*" 
 
       - name: Verify deployment
         run: |
