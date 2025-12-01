@@ -8,7 +8,7 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -22,12 +22,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Create Vite env (point to CloudFront)
+      - name: Create Vite env (fixed CloudFront URL)
         run: |
-          API_URL="${VITE_API_URL:-https://d34hoxniq2n0jw.cloudfront.net/api}"
-          echo "VITE_API_URL=$API_URL" > .env.production
-          echo "VITE_API_URL=$API_URL" > .env
-          echo "✅ Variables creadas: VITE_API_URL=$API_URL"
+          # -> FIX: VITE_API_URL estática (sin /api final)
+          echo "VITE_API_URL=https://d34hoxniq2n0jw.cloudfront.net" > .env.production
+          echo "VITE_API_URL=https://d34hoxniq2n0jw.cloudfront.net" > .env
+          echo "✅ Variables creadas (fijas): VITE_API_URL=https://d34hoxniq2n0jw.cloudfront.net"
 
       - name: Build (Vite)
         run: npm run build
@@ -43,6 +43,12 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-2
 
+      - name: (Optional but recommended) Empty S3 bucket before upload
+        run: |
+          # BORRA todo el contenido del bucket para evitar archivos antiguos en S3
+          aws s3 rm s3://f4u-frontend-demo --recursive || true
+          echo "✅ Bucket limpiado (si existían archivos antiguos)"
+
       - name: Sync build to S3
         run: |
           if [ -d "dist" ]; then BUILD_DIR="dist"; else BUILD_DIR="build"; fi
@@ -52,7 +58,6 @@ jobs:
       - name: Configure S3 website + policy
         run: |
           aws s3 website s3://f4u-frontend-demo --index-document index.html --error-document index.html || true
-          
           echo '{
             "Version":"2012-10-17",
             "Statement":[
@@ -65,16 +70,16 @@ jobs:
               }
             ]
           }' > /tmp/f4u_policy.json
-          
           aws s3api put-bucket-policy --bucket f4u-frontend-demo --policy file:///tmp/f4u_policy.json || true
           echo "✅ Configuración de S3 completada"
 
       - name: Check CloudFront API reachability
         run: |
           echo "Probando conexión a API vía CloudFront..."
+          # Probar el health endpoint a través de CloudFront (esto puede devolver 401 si requiere auth)
           curl -I --max-time 10 https://d34hoxniq2n0jw.cloudfront.net/api/health \
-            && echo "✅ API accesible" \
-            || echo "⚠️ API no accesible desde runner"
+            && echo "✅ API accesible (CloudFront)" \
+            || echo "⚠️ API no accesible desde runner vía CloudFront (ok si requiere auth)"
 
       - name: Invalidate CloudFront cache
         run: |
@@ -91,6 +96,6 @@ jobs:
           echo " URLs de acceso:"
           echo "  • Frontend (S3): http://f4u-frontend-demo.s3-website.us-east-2.amazonaws.com"
           echo "  • Frontend (CloudFront): https://d34hoxniq2n0jw.cloudfront.net"
-          echo "  • API Backend: https://d34hoxniq2n0jw.cloudfront.net/api"
+          echo "  • API Backend (via CloudFront): https://d34hoxniq2n0jw.cloudfront.net/api"
           echo ""
           echo " La invalidación de caché puede tardar 1-2 minutos en propagarse"
