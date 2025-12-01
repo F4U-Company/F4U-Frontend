@@ -9,7 +9,7 @@ export const msalConfig = {
   },
   cache: {
     cacheLocation: "sessionStorage", // Usar sessionStorage en lugar de localStorage
-    storeAuthStateInCookie: false, // No necesario si no usas IE11
+    storeAuthStateInCookie: true, // No necesario si no usas IE11
   },
 };
 
