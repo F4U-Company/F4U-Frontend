@@ -13,7 +13,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 20  # ✅ CAMBIADO: Node.js 20
+      - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -22,9 +22,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Create Vite env (point to CloudFront)  # ✅ CORREGIDO
+      - name: Create Vite env (point to CloudFront)
         run: |
-          # NOTA: Si vars.VITE_API_URL no está definida, usa valor por defecto
           API_URL="${VITE_API_URL:-https://d34hoxniq2n0jw.cloudfront.net/api}"
           echo "VITE_API_URL=$API_URL" > .env.production
           echo "VITE_API_URL=$API_URL" > .env
@@ -52,10 +51,8 @@ jobs:
 
       - name: Configure S3 website + policy
         run: |
-          # Configurar sitio web estático
           aws s3 website s3://f4u-frontend-demo --index-document index.html --error-document index.html || true
           
-          # Crear archivo de política
           echo '{
             "Version":"2012-10-17",
             "Statement":[
@@ -75,12 +72,16 @@ jobs:
       - name: Check CloudFront API reachability
         run: |
           echo "Probando conexión a API vía CloudFront..."
-          curl -I --max-time 10 https://d34hoxniq2n0jw.cloudfront.net/api/health && echo "✅ API accesible" || echo "⚠️ API no accesible desde runner"
+          curl -I --max-time 10 https://d34hoxniq2n0jw.cloudfront.net/api/health \
+            && echo "✅ API accesible" \
+            || echo "⚠️ API no accesible desde runner"
 
       - name: Invalidate CloudFront cache
         run: |
           echo "Invalidando caché de CloudFront..."
-          aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/*"
           echo "✅ Invalidación iniciada"
 
       - name: Finish
