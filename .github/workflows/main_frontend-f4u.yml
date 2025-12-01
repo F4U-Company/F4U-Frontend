@@ -8,6 +8,7 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -23,8 +24,8 @@ jobs:
 
       - name: Create Vite env (point to EC2 backend)
         run: |
-          echo "VITE_API_URL=http://ec2-18-220-74-7.us-east-2.compute.amazonaws.com:5000/api" > .env.production
-          echo "VITE_API_URL=http://ec2-18-220-74-7.us-east-2.compute.amazonaws.com:5000/api" > .env
+          echo "VITE_API_URL=http://18.220.74.7:5000/api" > .env.production
+          echo "VITE_API_URL=http://18.220.74.7:5000/api" > .env
 
       - name: Build (Vite)
         run: npm run build
@@ -48,28 +49,31 @@ jobs:
 
       - name: Configure S3 website + policy
         run: |
+          # Configurar sitio web estático
           aws s3 website s3://f4u-frontend-demo --index-document index.html --error-document index.html || true
-          cat > /tmp/f4u_policy.json <<'POL'
-{
-  "Version":"2012-10-17",
-  "Statement":[
-    {
-      "Sid":"PublicReadGetObject",
-      "Effect":"Allow",
-      "Principal":"*",
-      "Action":"s3:GetObject",
-      "Resource":"arn:aws:s3:::f4u-frontend-demo/*"
-    }
-  ]
-}
-POL
+          
+          # Crear archivo de política - VERSIÓN CORREGIDA
+          echo '{
+            "Version":"2012-10-17",
+            "Statement":[
+              {
+                "Sid":"PublicReadGetObject",
+                "Effect":"Allow",
+                "Principal":"*",
+                "Action":"s3:GetObject",
+                "Resource":"arn:aws:s3:::f4u-frontend-demo/*"
+              }
+            ]
+          }' > /tmp/f4u_policy.json
+          
           aws s3api put-bucket-policy --bucket f4u-frontend-demo --policy file:///tmp/f4u_policy.json || true
 
-      - name: Check backend reachability (no-falla)
+      - name: Check backend reachability
         run: |
           curl -I --max-time 10 http://18.220.74.7:5000/api/health || echo "Backend no disponible desde runner"
 
       - name: Finish
         run: |
-          echo "Frontend: http://f4u-frontend-demo.s3-website.us-east-2.amazonaws.com"
-          echo "Backend: http://ec2-18-220-74-7.us-east-2.compute.amazonaws.com:5000/api"
+          echo "✅ Frontend desplegado en S3"
+          echo "🌐 URL del Frontend: http://f4u-frontend-demo.s3-website.us-east-2.amazonaws.com"
+          echo "🔗 API Backend: http://18.220.74.7:5000/api"
