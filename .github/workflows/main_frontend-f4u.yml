@@ -1,102 +1,78 @@
-@"
-name: Deploy Frontend to AWS S3
+# Crea un workflow limpio y simple
+$workflowContent = @'
+name: 🚀 Deploy to AWS S3 Demo
 
 on:
   push:
     branches: [main]
+  workflow_dispatch:  # Permite ejecución manual
 
 jobs:
-  deploy:
+  deploy-demo:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v4
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
 
-    - name: Setup Node.js
+    - name: 📦 Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: 18
 
-    - name: Install dependencies
+    - name: 📚 Install dependencies
       run: npm ci
 
-    - name: Configure for Demo Mode
+    - name: ⚙️ Configure Demo Environment
       run: |
-        # Usa tu backend EC2
         echo "VITE_API_URL=http://18.220.74.7:5000/api" > .env
-        
-        # Crea configuración simplificada sin Azure AD
-        cat > src/authConfig.js << 'EOF'
-        // MODO DEMO - Sin Azure AD
-        export const getToken = async () => {
-          console.log('🔓 MODO DEMO: Sin autenticación');
-          return 'demo-token';
-        };
+        echo "Configuración de entorno lista ✅"
 
-        export const isAuthenticated = () => true;
+    - name: 🔨 Build React App
+      run: |
+        npm run build
+        echo "Build completado ✅"
 
-        export const msalInstance = {
-          acquireTokenSilent: async () => ({ accessToken: 'demo-token' }),
-          getAllAccounts: () => [{ username: 'demo@example.com' }],
-          handleRedirectPromise: () => Promise.resolve(null),
-          loginRedirect: () => console.log('Demo login'),
-          logout: () => console.log('Demo logout'),
-        };
-
-        export const msalConfig = {
-          auth: {
-            clientId: 'demo-mode',
-            authority: 'https://login.microsoftonline.com/common',
-            redirectUri: window.location.origin,
-          }
-        };
-
-        export const loginRequest = {
-          scopes: ['User.Read']
-        };
-        EOF
-
-    - name: Build React app
-      run: npm run build
-
-    - name: Configure AWS Credentials
+    - name: 🔐 Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: us-east-2
 
-    - name: Deploy to S3 Demo Bucket
+    - name: ☁️ Upload to S3
       run: |
+        echo "Subiendo archivos a S3..."
         aws s3 sync dist/ s3://f4u-frontend-demo --delete --acl public-read
-        
-        # Configurar hosting estático
+        echo "✅ Archivos subidos"
+
+    - name: 🌐 Configure Static Hosting
+      run: |
+        echo "Configurando hosting estático..."
         aws s3 website s3://f4u-frontend-demo \
           --index-document index.html \
           --error-document index.html
-        
-        # Configurar política pública
-        aws s3api put-bucket-policy \
-          --bucket f4u-frontend-demo \
-          --policy '{
-            "Version": "2012-10-17",
-            "Statement": [{
-              "Sid": "PublicReadGetObject",
-              "Effect": "Allow",
-              "Principal": "*",
-              "Action": "s3:GetObject",
-              "Resource": "arn:aws:s3:::f4u-frontend-demo/*"
-            }]
-          }'
+        echo "✅ Hosting configurado"
 
-    - name: Verify Deployment
+    - name: ✅ Verify Deployment
       run: |
-        echo " ¡Despliegue completado!"
-        echo "🌐 URL de tu aplicación: http://f4u-frontend-demo.s3-website.us-east-2.amazonaws.com"
-        echo "🔗 Backend conectado: http://18.220.74.7:5000/api"
+        echo "=========================================="
+        echo "🚀 ¡DESPLIEGUE COMPLETADO!"
+        echo "=========================================="
+        echo "🌐 URL de tu aplicación:"
+        echo "   http://f4u-frontend-demo.s3-website.us-east-2.amazonaws.com"
         echo ""
-        echo "Para probar:"
-        echo "1. Abre la URL en tu navegador"
-        echo "2. Presiona F12 para abrir la consola"
-        echo "3. Verifica que no haya errores de CORS"
-"@ | Out-File -FilePath .github\workflows\deploy.yml -Encoding UTF8
+        echo "🔗 Backend EC2:"
+        echo "   http://18.220.74.7:5000/api"
+        echo ""
+        echo "📊 Para verificar:"
+        echo "   1. Abre la URL en tu navegador"
+        echo "   2. Presiona F12 → Console"
+        echo "   3. Deberías ver la aplicación React"
+        echo "=========================================="
+'@
+
+# Guarda el workflow
+$workflowContent | Out-File -FilePath .github\workflows\deploy-demo.yml -Encoding UTF8
+
+Write-Host "✅ Workflow creado: .github\workflows\deploy-demo.yml" -ForegroundColor Green
