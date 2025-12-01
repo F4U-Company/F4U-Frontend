@@ -45,7 +45,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-2
 
-      - name: ☁️ Sync build to S3 (f4u-frontend-demo)
+      - name:  Sync build to S3 (f4u-frontend-demo)
         run: |
           # Ajusta la carpeta si tu build sale en 'build' en vez de 'dist'
           if [ -d "dist" ]; then BUILD_DIR="dist"; else BUILD_DIR="build"; fi
@@ -54,7 +54,7 @@ jobs:
           echo "Listando objetos subidos (primeros 20):"
           aws s3 ls s3://f4u-frontend-demo --recursive | head -n 20 || true
 
-      - name: 🌐 Configure S3 static website + bucket policy
+      - name:  Configure S3 static website + bucket policy
         run: |
           # Habilita hosting estático (idempotente)
           aws s3 website s3://f4u-frontend-demo --index-document index.html --error-document index.html || true
