@@ -9,7 +9,7 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - name:  Checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: 📦 Setup Node.js 18
@@ -23,9 +23,7 @@ jobs:
 
       - name: ⚙️ Create Vite env for production (point to EC2 backend)
         run: |
-          # Ajusta aquí si prefieres usar el DNS (recomendado) en lugar de la IP
           echo "VITE_API_URL=http://18.220.74.7:5000/api" > .env.production
-          # si tu app lee .env (Vite) también puedes crear .env
           echo "VITE_API_URL=http://18.220.74.7:5000/api" > .env
 
       - name: 🔨 Build React (Vite)
@@ -45,21 +43,16 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-2
 
-      - name:  Sync build to S3 (f4u-frontend-demo)
+      - name: Sync build to S3 (f4u-frontend-demo)
         run: |
-          # Ajusta la carpeta si tu build sale en 'build' en vez de 'dist'
           if [ -d "dist" ]; then BUILD_DIR="dist"; else BUILD_DIR="build"; fi
           echo "Sincronizando $BUILD_DIR -> s3://f4u-frontend-demo"
           aws s3 sync "$BUILD_DIR/" s3://f4u-frontend-demo --delete --acl public-read
-          echo "Listando objetos subidos (primeros 20):"
           aws s3 ls s3://f4u-frontend-demo --recursive | head -n 20 || true
 
-      - name:  Configure S3 static website + bucket policy
+      - name: Configure S3 static website + bucket policy
         run: |
-          # Habilita hosting estático (idempotente)
           aws s3 website s3://f4u-frontend-demo --index-document index.html --error-document index.html || true
-
-          # Crea policy simple de solo lectura pública (modifica si no quieres pública)
           cat > /tmp/f4u_policy.json <<'POL'
 {
   "Version":"2012-10-17",
@@ -79,14 +72,9 @@ POL
 
       - name: 🔎 Check backend reachability (no-falla)
         run: |
-          echo "Probando HEAD a tu backend (no marcará fallo si no responde)"
-          curl -I --max-time 10 http://18.220.74.7:5000/api/health || echo "Backend no disponible desde runner o endpoint /health no existe"
+          curl -I --max-time 10 http://18.220.74.7:5000/api/health || echo "Backend no disponible"
 
       - name: ✅ Finish
         run: |
-          echo "========================================"
-          echo "Deploy terminado."
           echo "Frontend URL: http://f4u-frontend-demo.s3-website.us-east-2.amazonaws.com"
           echo "Backend: http://18.220.74.7:5000/api"
-          echo "Si la app no obtiene datos, revisa CORS en el backend."
-          echo "========================================"
