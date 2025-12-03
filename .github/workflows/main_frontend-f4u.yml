@@ -22,12 +22,30 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Create Vite env (fixed CloudFront URL)
+      - name: Create Vite env (Azure AD + CloudFront URL)
         run: |
           # -> FIX: VITE_API_URL estática (sin /api final)
           echo "VITE_API_URL=https://d34hoxniq2n0jw.cloudfront.net" > .env.production
+
+          # Azure AD / MSAL (frontend-safe values)
+          # CLIENT IDs y URIs (no poner secrets aquí)
+          echo "VITE_AZURE_CLIENT_ID=0758e3c8-a43d-4957-a829-8d92f911ad31" >> .env.production
+          echo "VITE_AZURE_API_CLIENT_ID=dce7b0a8-1f73-483e-a684-f5f3d8c2f713" >> .env.production
+          echo "VITE_AZURE_AUTHORITY=https://login.microsoftonline.com/common" >> .env.production
+          echo "VITE_AZURE_REDIRECT_URI=https://d34hoxniq2n0jw.cloudfront.net/" >> .env.production
+          echo "VITE_AZURE_POST_LOGOUT_REDIRECT_URI=https://d34hoxniq2n0jw.cloudfront.net/" >> .env.production
+          echo "VITE_AZURE_API_SCOPE=api://f4u-api/access" >> .env.production
+
+          # También generamos .env local estilo runner (opcional)
           echo "VITE_API_URL=https://d34hoxniq2n0jw.cloudfront.net" > .env
-          echo "✅ Variables creadas (fijas): VITE_API_URL=https://d34hoxniq2n0jw.cloudfront.net"
+          echo "VITE_AZURE_CLIENT_ID=0758e3c8-a43d-4957-a829-8d92f911ad31" >> .env
+          echo "VITE_AZURE_API_CLIENT_ID=dce7b0a8-1f73-483e-a684-f5f3d8c2f713" >> .env
+          echo "VITE_AZURE_AUTHORITY=https://login.microsoftonline.com/common" >> .env
+          echo "VITE_AZURE_REDIRECT_URI=https://d34hoxniq2n0jw.cloudfront.net/" >> .env
+          echo "VITE_AZURE_POST_LOGOUT_REDIRECT_URI=https://d34hoxniq2n0jw.cloudfront.net/" >> .env
+          echo "VITE_AZURE_API_SCOPE=api://f4u-api/access" >> .env
+
+          echo "✅ Variables creadas (VITE_API_URL + Azure AD) en .env.production y .env"
 
       - name: Build (Vite)
         run: npm run build
