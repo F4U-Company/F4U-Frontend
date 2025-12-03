@@ -10,7 +10,7 @@ const AUTHORITY = "https://login.microsoftonline.com/common";
 const REDIRECT_URI = "https://d34hoxniq2n0jw.cloudfront.net/";
 const POST_LOGOUT_REDIRECT_URI = "https://d34hoxniq2n0jw.cloudfront.net/";
 
-const API_SCOPE = "api://f4u-api/access"; // Scope real de tu backend
+const API_SCOPE = "api://0758e3c8-a43d-4957-a829-8d92f911ad31/access_as_user"; // Scope real de tu backend
 const API_BASE_URL = "https://d34hoxniq2n0jw.cloudfront.net"; // Para las llamadas /api
 
 
