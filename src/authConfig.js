@@ -1,34 +1,64 @@
-// src/authConfig.js
-// Configuración MSAL para una SPA con Vite (import.meta.env)
+// ==========================================
+//  MSAL CONFIG - VERSION ESTÁTICA (DEBUG)
+//  Ignora import.meta.env para probar si el
+//  problema es .env.production o el build
+// ==========================================
+
+// ⚠️ Estos valores son seguros para frontend (no hay secretos)
+const CLIENT_ID = "0758e3c8-a43d-4957-a829-8d92f911ad31";   // Tu SPA Frontend
+const AUTHORITY = "https://login.microsoftonline.com/common";
+const REDIRECT_URI = "https://d34hoxniq2n0jw.cloudfront.net/";
+const POST_LOGOUT_REDIRECT_URI = "https://d34hoxniq2n0jw.cloudfront.net/";
+
+const API_SCOPE = "api://f4u-api/access"; // Scope real de tu backend
+const API_BASE_URL = "https://d34hoxniq2n0jw.cloudfront.net"; // Para las llamadas /api
+
+
+// ==========================================
+//  EXPORT: CONFIGURACIÓN MSAL
+// ==========================================
 export const msalConfig = {
   auth: {
-    clientId: import.meta.env.VITE_AZURE_CLIENT_ID, // Frontend SPA app (F4U-Airlines)
-    authority: import.meta.env.VITE_AZURE_AUTHORITY, // https://login.microsoftonline.com/{TENANT_ID}
-    redirectUri: import.meta.env.VITE_AZURE_REDIRECT_URI, // CloudFront o localhost en dev
-    postLogoutRedirectUri: import.meta.env.VITE_AZURE_POST_LOGOUT_REDIRECT_URI
+    clientId: CLIENT_ID,
+    authority: AUTHORITY,
+    redirectUri: REDIRECT_URI,
+    postLogoutRedirectUri: POST_LOGOUT_REDIRECT_URI,
   },
   cache: {
-    cacheLocation: "sessionStorage", // recomendado para SPA; usar localStorage si quieres persistencia entre pestañas
+    cacheLocation: "sessionStorage",
     storeAuthStateInCookie: false,
   },
   system: {
-    // opcional: evita logs muy verbosos en prod
     loggerOptions: {
       loggerCallback: (level, message) => {
-        // console.log(level, message);
+        // console.log(message);
       },
-      piiLoggingEnabled: false
-    }
-  }
+      piiLoggingEnabled: false,
+    },
+  },
 };
 
-// Request para login (abrir sesión)
+
+// ==========================================
+//  REQUEST PARA LOGIN
+// ==========================================
 export const loginRequest = {
-  // Se piden scopes de signin + el scope de la API backend
-  scopes: ["openid", "profile", "offline_access", import.meta.env.VITE_AZURE_API_SCOPE]
+  scopes: ["openid", "profile", "offline_access", API_SCOPE],
 };
 
-// Request para obtener access token (para llamar al backend)
+
+// ==========================================
+//  REQUEST PARA TOKEN (API BACKEND)
+// ==========================================
 export const tokenRequest = {
-  scopes: [import.meta.env.VITE_AZURE_API_SCOPE]
+  scopes: [API_SCOPE],
+};
+
+
+// ==========================================
+//  (Opcional) CONFIG PARA TU API
+// ==========================================
+export const apiConfig = {
+  baseUrl: API_BASE_URL,
+  validateTokenUrl: `${API_BASE_URL}/api/auth/validate-token`,
 };
