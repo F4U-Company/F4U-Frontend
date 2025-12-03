@@ -22,13 +22,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Create Vite env (Azure AD + CloudFront URL)
+      - name: Create .env.production (Vite env)
         run: |
-          # -> FIX: VITE_API_URL estática (sin /api final)
           echo "VITE_API_URL=https://d34hoxniq2n0jw.cloudfront.net" > .env.production
 
-          # Azure AD / MSAL (frontend-safe values)
-          # CLIENT IDs y URIs (no poner secrets aquí)
+          # Azure AD vars
           echo "VITE_AZURE_CLIENT_ID=0758e3c8-a43d-4957-a829-8d92f911ad31" >> .env.production
           echo "VITE_AZURE_API_CLIENT_ID=dce7b0a8-1f73-483e-a684-f5f3d8c2f713" >> .env.production
           echo "VITE_AZURE_AUTHORITY=https://login.microsoftonline.com/common" >> .env.production
@@ -36,18 +34,12 @@ jobs:
           echo "VITE_AZURE_POST_LOGOUT_REDIRECT_URI=https://d34hoxniq2n0jw.cloudfront.net/" >> .env.production
           echo "VITE_AZURE_API_SCOPE=api://f4u-api/access" >> .env.production
 
-          # También generamos .env local estilo runner (opcional)
-          echo "VITE_API_URL=https://d34hoxniq2n0jw.cloudfront.net" > .env
-          echo "VITE_AZURE_CLIENT_ID=0758e3c8-a43d-4957-a829-8d92f911ad31" >> .env
-          echo "VITE_AZURE_API_CLIENT_ID=dce7b0a8-1f73-483e-a684-f5f3d8c2f713" >> .env
-          echo "VITE_AZURE_AUTHORITY=https://login.microsoftonline.com/common" >> .env
-          echo "VITE_AZURE_REDIRECT_URI=https://d34hoxniq2n0jw.cloudfront.net/" >> .env
-          echo "VITE_AZURE_POST_LOGOUT_REDIRECT_URI=https://d34hoxniq2n0jw.cloudfront.net/" >> .env
-          echo "VITE_AZURE_API_SCOPE=api://f4u-api/access" >> .env
-
-          echo "✅ Variables creadas (VITE_API_URL + Azure AD) en .env.production y .env"
+          echo "✅ Archivo .env.production creado"
 
       - name: Build (Vite)
+        env:
+          # Esto hace que Vite SÍ cargue el archivo .env.production
+          NODE_ENV: production
         run: npm run build
 
       - name: Show build output (debug)
@@ -61,17 +53,16 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-2
 
-      - name: (Optional but recommended) Empty S3 bucket before upload
+      - name: Empty S3 bucket before upload
         run: |
-          # BORRA todo el contenido del bucket para evitar archivos antiguos en S3
           aws s3 rm s3://f4u-frontend-demo --recursive || true
-          echo "✅ Bucket limpiado (si existían archivos antiguos)"
+          echo "🗑 Bucket limpiado"
 
       - name: Sync build to S3
         run: |
           if [ -d "dist" ]; then BUILD_DIR="dist"; else BUILD_DIR="build"; fi
           aws s3 sync "$BUILD_DIR/" s3://f4u-frontend-demo --delete
-          echo "✅ Archivos sincronizados con S3"
+          echo "📤 Archivos desplegados en S3"
 
       - name: Configure S3 website + policy
         run: |
@@ -89,31 +80,16 @@ jobs:
             ]
           }' > /tmp/f4u_policy.json
           aws s3api put-bucket-policy --bucket f4u-frontend-demo --policy file:///tmp/f4u_policy.json || true
-          echo "✅ Configuración de S3 completada"
-
-      - name: Check CloudFront API reachability
-        run: |
-          echo "Probando conexión a API vía CloudFront..."
-          # Probar el health endpoint a través de CloudFront (esto puede devolver 401 si requiere auth)
-          curl -I --max-time 10 https://d34hoxniq2n0jw.cloudfront.net/api/health \
-            && echo "✅ API accesible (CloudFront)" \
-            || echo "⚠️ API no accesible desde runner vía CloudFront (ok si requiere auth)"
+          echo "🔓 Política pública aplicada"
 
       - name: Invalidate CloudFront cache
         run: |
-          echo "Invalidando caché de CloudFront..."
           aws cloudfront create-invalidation \
             --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
             --paths "/*"
-          echo "✅ Invalidación iniciada"
+          echo "🌀 CloudFront invalidado"
 
       - name: Finish
         run: |
-          echo "🎉 DEPLOY COMPLETADO EXITOSAMENTE"
-          echo ""
-          echo " URLs de acceso:"
-          echo "  • Frontend (S3): http://f4u-frontend-demo.s3-website.us-east-2.amazonaws.com"
-          echo "  • Frontend (CloudFront): https://d34hoxniq2n0jw.cloudfront.net"
-          echo "  • API Backend (via CloudFront): https://d34hoxniq2n0jw.cloudfront.net/api"
-          echo ""
-          echo " La invalidación de caché puede tardar 1-2 minutos en propagarse"
+          echo "🎉 DEPLOY COMPLETADO"
+          echo "🌐 https://d34hoxniq2n0jw.cloudfront.net"
