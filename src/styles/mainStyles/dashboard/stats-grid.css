@@ -58,7 +58,7 @@
 }
 
 .stat-label {
-  color: var(--text-secondary);
+  color: #1e293b;
   font-weight: var(--font-weight-medium);
   font-size: var(--font-size-sm);
 }

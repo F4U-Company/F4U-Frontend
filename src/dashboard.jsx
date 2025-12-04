@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useMsal, useIsAuthenticated } from "@azure/msal-react";
 import { reservationAPI, authAPI, flightAPI, cityAPI } from "./services/api";
 import ProtectedRoute from "./components/ProtectedRoute";
+import Chatbot from "./components/Chatbot";
 import "./styles/mainStyles/dashboard/index.css";
 
 export default function Dashboard() {
@@ -294,13 +295,6 @@ export default function Dashboard() {
         console.error("Error obteniendo estadísticas:", statsError);
         addDebugInfo("/api/reservaciones/usuario/estadisticas");
       }
-      
-      setStats({
-        totalReservations: statsData.totalReservations?.toString() || "0",
-        activeReservations: statsData.activeReservations?.toString() || "0",
-        accumulatedMiles: statsData.accumulatedMiles?.toLocaleString() || "0",
-        level: statsData.level || "Bronce"
-      });
 
       // TEST 4: Obtener reservas del usuario
       let reservations = [];
@@ -360,12 +354,61 @@ export default function Dashboard() {
         const formattedReservations = formatReservationsData(enrichedReservations);
         setUserReservations(formattedReservations);
         addDebugInfo("Reservas enriquecidas con vuelos");
+        
+        // Calcular estadísticas basadas en las reservas reales
+        const totalReservations = reservations.length;
+        const activeReservations = reservations.filter(r => 
+          r.estado === "CONFIRMADA" || r.estado === "PAGADA"
+        ).length;
+        const accumulatedMiles = totalReservations * 1000;
+        let level = "Bronce";
+        if (totalReservations >= 10) {
+          level = "Oro";
+        } else if (totalReservations >= 5) {
+          level = "Plata";
+        }
+        
+        console.log("📊 Estadísticas calculadas localmente:", {
+          totalReservations,
+          activeReservations,
+          accumulatedMiles,
+          level
+        });
+        
+        // Actualizar estadísticas con valores reales
+        setStats({
+          totalReservations: totalReservations.toString(),
+          activeReservations: activeReservations.toString(),
+          accumulatedMiles: accumulatedMiles.toLocaleString(),
+          level: level
+        });
+        
       } catch (enrichError) {
         console.error("Error enriqueciendo reservas:", enrichError);
         // Usar reservas básicas si falla el enriquecimiento
         const formattedReservations = formatReservationsData(reservations);
         setUserReservations(formattedReservations);
         addDebugInfo("⚠️ Reservas básicas (sin enriquecimiento)");
+        
+        // Calcular estadísticas incluso si falla el enriquecimiento
+        const totalReservations = reservations.length;
+        const activeReservations = reservations.filter(r => 
+          r.estado === "CONFIRMADA" || r.estado === "PAGADA"
+        ).length;
+        const accumulatedMiles = totalReservations * 1000;
+        let level = "Bronce";
+        if (totalReservations >= 10) {
+          level = "Oro";
+        } else if (totalReservations >= 5) {
+          level = "Plata";
+        }
+        
+        setStats({
+          totalReservations: totalReservations.toString(),
+          activeReservations: activeReservations.toString(),
+          accumulatedMiles: accumulatedMiles.toLocaleString(),
+          level: level
+        });
       }
       
     } catch (err) {
@@ -954,6 +997,23 @@ ${userReservations.length > 0 ?
                   Estado del Aeropuerto
                 </h3>
                 <div className="airport-status">
+                  {/* Imagen del aeropuerto */}
+                  {userReservations[0]?.fromCity && (
+                    <div className="airport-image-container">
+                      <img 
+                        src={
+                          userReservations[0].fromCity.toLowerCase().includes('bogotá') || userReservations[0].fromCity.toLowerCase().includes('bogota')
+                            ? 'https://files.visitbogota.co/sites/default/files/2024-04/Aeropuerto-Internacional-El-Dorado-Bogota-Colombia-0.jpg'
+                            : userReservations[0].fromCity.toLowerCase().includes('medellín') || userReservations[0].fromCity.toLowerCase().includes('medellin')
+                            ? 'https://imagenes2.eltiempo.com/files/image_1200_535/uploads/2022/02/20/621244798c079.jpeg'
+                            : 'https://files.visitbogota.co/sites/default/files/2024-04/Aeropuerto-Internacional-El-Dorado-Bogota-Colombia-0.jpg'
+                        }
+                        alt={`Aeropuerto de ${userReservations[0].fromCity}`}
+                        className="airport-image"
+                      />
+                    </div>
+                  )}
+                  
                   <div className="airport-info">
                     <h4>
                       {userReservations[0]?.fromCity ? 
@@ -1158,6 +1218,9 @@ ${userReservations.length > 0 ?
           </aside>
         </div>
       </main>
+      
+      {/* Chatbot flotante */}
+      <Chatbot />
       </div>
     </ProtectedRoute>
   );
