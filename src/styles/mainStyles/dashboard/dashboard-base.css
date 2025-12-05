@@ -7,18 +7,31 @@
   background: var(--bg-secondary);
   font-family: 'Graphik-Regular', -apple-system, BlinkMacSystemFont, sans-serif;
   color: var(--text-primary);
+  overflow-x: hidden;
+  max-width: 100vw;
 }
 
 .dashboard-main {
   padding: 2rem;
   max-width: var(--max-width);
   margin: 0 auto;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .dashboard-content {
   display: grid;
-  grid-template-columns: 1fr 320px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 320px);
   gap: 1.5rem;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+@media (max-width: 1200px) {
+  .dashboard-content {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Section Headers */

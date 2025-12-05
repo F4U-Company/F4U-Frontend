@@ -14,16 +14,10 @@ const Login = () => {
     setError(null);
     
     try {
-      // Iniciar el flujo de login con Microsoft
-      const response = await instance.loginPopup(loginRequest);
-      
-      // Guardar el token inmediatamente después del login exitoso
-      if (response && response.accessToken) {
-        sessionStorage.setItem('accessToken', response.accessToken);
-        console.log('✅ Token guardado exitosamente');
-      }
-      
-      // El componente se re-renderizará automáticamente por el cambio de estado de MSAL
+      // Usar redirect en lugar de popup para mantener la sesión
+      await instance.loginRedirect(loginRequest);
+      // El redirect llevará al usuario a Microsoft y volverá a esta página
+      // No hay código después porque la página se recarga
     } catch (err) {
       console.error('Error durante el login:', err);
       setError('Error al iniciar sesión. Por favor, intenta nuevamente.');

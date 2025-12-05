@@ -8,16 +8,20 @@
   padding: 1.5rem;
   box-shadow: var(--shadow-md);
   border: 1px solid var(--gray-200);
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .flights-grid {
   display: grid;
   gap: 1.5rem;
+  max-width: 100%;
 }
 
 .flight-card {
   display: grid;
-  grid-template-columns: 160px 1fr 300px;
+  grid-template-columns: minmax(0, 140px) minmax(280px, 1fr) minmax(0, 260px);
   gap: 1.5rem;
   align-items: center;
   background: rgba(255, 255, 255, 0.85);
@@ -30,6 +34,9 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   cursor: pointer;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .flight-card::before {
@@ -123,9 +130,12 @@
 .flight-route {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 1.5rem;
   flex: 1;
+  min-width: 0;
+  padding: 0 1rem;
+  margin-left: -25px;
 }
 
 .flight-time {
@@ -133,21 +143,28 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
+  flex-shrink: 0;
+  min-width: 90px;
 }
 
 .flight-time .time-value {
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 700;
   color: #1e293b;
   font-family: 'Graphik-Medium', sans-serif;
   margin-bottom: 4px;
+  white-space: nowrap;
 }
 
 .flight-time .city-name {
-  font-size: 14px;
+  font-size: 13px;
   color: #475569;
   font-weight: 600;
   margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 90px;
 }
 
 .flight-time .airport-code {
@@ -155,6 +172,7 @@
   color: #94a3b8;
   font-weight: 500;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 /* Línea de ruta con avión */
@@ -163,8 +181,10 @@
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  min-width: 80px;
+  min-width: 60px;
   position: relative;
+  flex-shrink: 1;
+  margin-top: 8px;
 }
 
 .flight-path .path-line {
@@ -185,38 +205,44 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 16px;
+  padding: 12px;
   background: rgba(248, 250, 252, 0.6);
   border-radius: 12px;
   border: 1px solid rgba(226, 232, 240, 0.8);
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .price-option {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 12px;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .price-class {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   color: #1e293b;
   margin-bottom: 2px;
 }
 
 .price-seats {
-  font-size: 12px;
+  font-size: 11px;
   color: #64748b;
   font-weight: 500;
 }
 
 .price-amount {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 800;
   color: #0066ff;
   font-family: 'Graphik-Medium', sans-serif;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .flight-actions {

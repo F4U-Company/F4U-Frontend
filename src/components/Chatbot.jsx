@@ -106,19 +106,6 @@ const Chatbot = () => {
     }
   };
 
-  // Preguntas sugeridas
-  const suggestedQuestions = [
-    '¿Cuántas reservas tengo?',
-    '¿Cuál es mi próximo vuelo?',
-    '¿Qué extras incluye mi reserva?',
-    'Muéstrame los detalles de mi última reserva',
-    '¿Cuánto pagué en total?'
-  ];
-
-  const handleSuggestedQuestion = (question) => {
-    setInputMessage(question);
-  };
-
   return (
     <>
       {/* Botón flotante del chatbot */}
@@ -191,25 +178,6 @@ const Chatbot = () => {
             
             <div ref={messagesEndRef} />
           </div>
-
-          {/* Preguntas sugeridas (solo si no hay muchos mensajes) */}
-          {messages.length <= 2 && (
-            <div className="suggested-questions">
-              <p className="suggested-title">Preguntas frecuentes:</p>
-              <div className="suggested-buttons">
-                {suggestedQuestions.map((question, index) => (
-                  <button
-                    key={index}
-                    className="suggested-button"
-                    onClick={() => handleSuggestedQuestion(question)}
-                    disabled={isLoading}
-                  >
-                    {question}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
 
           <form className="chatbot-input-form" onSubmit={handleSendMessage}>
             <input
