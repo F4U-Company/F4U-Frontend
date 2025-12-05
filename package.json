@@ -7,9 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "vitest",
-    "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage"
+    "test": "vitest --config vitest.config.mjs",
+    "test:ui": "vitest --config vitest.config.mjs --ui",
+    "test:coverage": "vitest run --config vitest.config.mjs --coverage"
   },
   "keywords": [],
   "author": "",
