@@ -15,7 +15,7 @@ const AuthTest = () => {
   useEffect(() => {
     // Verificar si el token está guardado
     const checkToken = () => {
-      const token = sessionStorage.getItem('accessToken');
+      const token = localStorage.getItem('accessToken');
       setTokenExists(!!token);
       if (token) {
         console.log('🔑 Token encontrado:', token.substring(0, 20) + '...');

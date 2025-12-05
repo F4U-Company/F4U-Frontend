@@ -36,7 +36,7 @@ export default function Dashboard() {
 
   // Verificar autenticación inmediatamente
   useEffect(() => {
-    const token = sessionStorage.getItem('accessToken');
+    const token = localStorage.getItem('accessToken');
     if (!isAuthenticated && !token) {
       console.log('🚫 No autenticado - Redirigiendo a home');
       window.location.href = '/';
@@ -235,7 +235,7 @@ export default function Dashboard() {
       console.log("Iniciando carga de datos del usuario...");
       
       // Verificar que el usuario esté autenticado antes de hacer peticiones
-      const token = sessionStorage.getItem('accessToken');
+      const token = localStorage.getItem('accessToken');
       if (!token) {
         console.error("No hay token de autenticación");
         setError("No estás autenticado. Redirigiendo...");
@@ -256,6 +256,7 @@ export default function Dashboard() {
         console.error("Error de autenticación:", authError);
         if (authError.response?.status === 401 || authError.message?.includes('No autorizado')) {
           setError("Sesión expirada. Por favor, inicia sesión nuevamente.");
+          localStorage.removeItem('accessToken');
           sessionStorage.clear();
           setTimeout(() => {
             window.location.href = '/';
@@ -416,6 +417,7 @@ export default function Dashboard() {
       
       if (err.response?.status === 401) {
         setError("Sesión expirada. Por favor, inicia sesión nuevamente.");
+        localStorage.removeItem('accessToken');
         sessionStorage.clear();
         setTimeout(() => window.location.href = '/', 2000);
       } else if (err.response?.status === 404) {
@@ -666,6 +668,7 @@ export default function Dashboard() {
   ];
 
   const handleLogout = () => {
+    localStorage.removeItem('accessToken');
     sessionStorage.clear();
     instance.logoutPopup({ 
       postLogoutRedirectUri: "/",
@@ -725,7 +728,7 @@ ${userReservations.length > 0 ?
   };
 
   // No mostrar nada si no está autenticado
-  const token = sessionStorage.getItem('accessToken');
+  const token = localStorage.getItem('accessToken');
   if (!isAuthenticated && !token) {
     return null;
   }

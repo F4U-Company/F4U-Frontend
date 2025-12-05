@@ -289,15 +289,15 @@ export default function App() {
     console.log('📱 App.jsx useEffect ejecutado:', {
       isAuthenticated,
       accountsLength: accounts.length,
-      hasToken: !!sessionStorage.getItem('accessToken'),
+      hasToken: !!localStorage.getItem('accessToken'),
       timestamp: new Date().toLocaleTimeString()
     });
 
     // Guardar el token JWT cuando el usuario se autentica
     const saveAccessToken = async () => {
       // Si ya hay token, no hacer nada
-      if (sessionStorage.getItem('accessToken')) {
-        console.log('✅ Token ya existe en sessionStorage');
+      if (localStorage.getItem('accessToken')) {
+        console.log('✅ Token ya existe en localStorage');
         return;
       }
       
@@ -315,7 +315,7 @@ export default function App() {
               expiresOn: response.expiresOn,
               account: response.account.username
             });
-            sessionStorage.setItem('accessToken', response.accessToken);
+            localStorage.setItem('accessToken', response.accessToken);
             tokenSavedRef.current = true;
             console.log('✅ Token guardado en useEffect');
           }
@@ -632,6 +632,7 @@ export default function App() {
                   <div className="menu-divider" />
                   
                   <button className="menu-item logout" onClick={() => {
+                    localStorage.removeItem('accessToken');
                     sessionStorage.clear();
                     instance.logoutPopup({ mainWindowRedirectUri: '/' });
                   }}>

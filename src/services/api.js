@@ -86,7 +86,7 @@ api.interceptors.request.use(
       config.url?.startsWith(endpoint)
     );
     
-    const token = sessionStorage.getItem('accessToken');
+    const token = localStorage.getItem('accessToken');
     
     // Si es un endpoint protegido y no hay token, rechazar la petición
     if (isProtectedEndpoint && !token) {
@@ -157,13 +157,14 @@ api.interceptors.response.use(
         console.log('🔍 Error 401 detectado:', {
           url,
           isPublicEndpoint,
-          hasToken: !!sessionStorage.getItem('accessToken')
+          hasToken: !!localStorage.getItem('accessToken')
         });
       }
       
       // Solo redirigir si NO es un endpoint público
       if (!isPublicEndpoint) {
         console.error('❌ Error 401 en endpoint protegido - Limpiando sesión...');
+        localStorage.removeItem('accessToken');
         sessionStorage.clear();
         // Usar setTimeout para evitar problemas de navegación síncrona
         setTimeout(() => {
@@ -210,12 +211,12 @@ export const apiUtils = {
   
   // Verificar autenticación
   isAuthenticated: () => {
-    return !!sessionStorage.getItem('accessToken');
+    return !!localStorage.getItem('accessToken');
   },
   
   // Obtener información del token
   getTokenInfo: () => {
-    const token = sessionStorage.getItem('accessToken');
+    const token = localStorage.getItem('accessToken');
     if (!token) return null;
     
     try {
@@ -236,6 +237,7 @@ export const apiUtils = {
   
   // Limpiar autenticación
   clearAuth: () => {
+    localStorage.removeItem('accessToken');
     sessionStorage.clear();
     localStorage.removeItem('msal-account');
   },
