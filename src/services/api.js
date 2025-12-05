@@ -1,28 +1,15 @@
 // src/services/api.js
 import axios from 'axios';
-import {
-  buildAuthAPI,
-  buildCityAPI,
-  buildDashboardAPI,
-  buildDebugAPI,
-  buildFlightAPI,
-  buildPaymentAPI,
-  buildReservationAPI,
-  buildSeatAPI,
-  buildSeatLockAPI,
-  buildTestAPI,
-  buildUserAPI,
-} from './apiEndpoints';
 
 // URL base del backend - cambiar según el entorno
-export const getApiBaseUrl = (env = import.meta.env, location = window.location) => {
+const getApiBaseUrl = () => {
   // Primero intentar con la variable de entorno de Vite
-  if (env?.VITE_API_URL) {
-    return env.VITE_API_URL;
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
   }
   
   // Si estamos en producción (hostname contiene azurestaticapps.net)
-  if (location?.hostname?.includes('azurestaticapps.net')) {
+  if (window.location.hostname.includes('azurestaticapps.net')) {
     return 'https://backend-f4u-cyavghdvh3eyh5bc.brazilsouth-01.azurewebsites.net';
   }
   
@@ -143,15 +130,15 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       const url = error.config?.url || '';
       const publicEndpoints = [
-        '/api/test', 
-        '/api/health', 
-        '/actuator', 
-        '/api/flights', 
-        '/api/cities',
-        '/api/reservaciones',
+        '/api/test/', 
+        '/api/health/', 
+        '/actuator/', 
+        '/api/flights/', 
+        '/api/cities/',
+        '/api/reservaciones/',
         '/api/debug/public'
       ];
-      const isPublicEndpoint = publicEndpoints.some(endpoint => url.startsWith(endpoint));
+      const isPublicEndpoint = publicEndpoints.some(endpoint => url.includes(endpoint));
       
       if (import.meta.env.DEV) {
         console.log('🔍 Error 401 detectado:', {
@@ -183,18 +170,239 @@ api.interceptors.response.use(
   }
 );
 
-// ============ ENDPOINT COLLECTIONS ============
-export const authAPI = buildAuthAPI(api);
-export const testAPI = buildTestAPI(api);
-export const debugAPI = buildDebugAPI(api);
-export const flightAPI = buildFlightAPI(api);
-export const reservationAPI = buildReservationAPI(api);
-export const cityAPI = buildCityAPI(api);
-export const seatAPI = buildSeatAPI(api);
-export const seatLockAPI = buildSeatLockAPI(api);
-export const userAPI = buildUserAPI(api);
-export const paymentAPI = buildPaymentAPI(api);
-export const dashboardAPI = buildDashboardAPI(api);
+// ============ AUTH ENDPOINTS ============
+export const authAPI = {
+  // Obtener información del usuario autenticado
+  getUserProfile: () => api.get('/api/auth/me'),
+  
+  // Validar token
+  validateToken: () => api.get('/api/auth/validate-token'),
+  
+  // Obtener roles del usuario
+  getUserRoles: () => api.get('/api/auth/roles'),
+  
+  // Login (si es necesario en el futuro)
+  login: (credentials) => api.post('/api/auth/login', credentials),
+  
+  // Logout (si es necesario en el futuro)
+  logout: () => api.post('/api/auth/logout'),
+};
+
+// ============ TEST ENDPOINTS ============
+export const testAPI = {
+  // Health check
+  healthCheck: () => api.get('/api/test/health'),
+  
+  // Estado de la base de datos
+  dbStatus: () => api.get('/api/test/db-status'),
+  
+  // Test de conexión simple
+  ping: () => api.get('/api/test/ping'),
+};
+
+// ============ DEBUG ENDPOINTS ============
+export const debugAPI = {
+  // Información del token (endpoint protegido)
+  getTokenInfo: () => api.get('/api/debug/token-info'),
+  
+  // Endpoint público de debug
+  publicDebug: () => api.get('/api/debug/public'),
+  
+  // Información de la sesión
+  getSessionInfo: () => api.get('/api/debug/session-info'),
+};
+
+// ============ FLIGHT ENDPOINTS ============
+export const flightAPI = {
+  // Obtener todos los vuelos
+  getAllFlights: () => api.get('/api/flights'),
+  
+  // Buscar vuelos
+  searchFlights: (params) => api.get('/api/flights/search', { params }),
+  
+  // Obtener vuelo por ID
+  getFlightById: (id) => api.get(`/api/flights/${id}`),
+  
+  // Obtener vuelos disponibles (si existe el endpoint)
+  getAvailableFlights: () => api.get('/api/flights/available').catch(() => ({ data: [] })),
+  
+  // Obtener información de aeropuertos (si existe el endpoint)
+  getAirports: () => api.get('/api/flights/airports').catch(() => ({ data: [] })),
+};
+
+// ============ RESERVATION ENDPOINTS ============
+export const reservationAPI = {
+  // Crear reserva (tabla 'reservaciones')
+  createReservation: (data) => api.post('/api/reservaciones', data),
+  
+  // Intentar (re)bloquear asiento justo antes de confirmar
+  tryLock: (seatId, userId) => api.post(`/api/reservaciones/try-lock/${seatId}`, userId ? { userId } : {}, {
+    headers: { 'Content-Type': 'application/json' }
+  }),
+  
+  // Obtener reservas del usuario
+  getUserReservations: () => api.get('/api/reservaciones/usuario'),
+  
+  // Obtener reservas activas del usuario
+  getUserActiveReservations: () => api.get('/api/reservaciones/usuario/activas'),
+  
+  // Obtener estadísticas del usuario
+  getUserStats: () => api.get('/api/reservaciones/usuario/estadisticas'),
+  
+  // Obtener todas las reservas (admin)
+  getAllReservations: () => api.get('/api/reservaciones'),
+  
+  // Obtener reserva por código
+  getReservationByCode: (code) => api.get(`/api/reservaciones/${code}`),
+  
+  // Actualizar reserva (si existe el endpoint)
+  updateReservation: (id, data) => api.put(`/api/reservaciones/${id}`, data).catch(() => { 
+    throw new Error('Endpoint no disponible') 
+  }),
+  
+  // Cancelar reserva (si existe el endpoint)
+  cancelReservation: (id) => api.delete(`/api/reservaciones/${id}`).catch(() => { 
+    throw new Error('Endpoint no disponible') 
+  }),
+  
+  // Obtener reservas del usuario con información completa de vuelos
+  getUserReservationsWithFlightInfo: () => api.get('/api/reservaciones/usuario/completo'),
+  
+  // Obtener reservas activas con información completa de vuelos
+  getUserActiveReservationsWithFlightInfo: () => api.get('/api/reservaciones/usuario/activas/completo'),
+  
+  // Confirmar reserva (endpoint existente)
+  confirmReservation: (data) => api.post('/api/reservaciones/confirm', data),
+};
+
+// ============ CITY ENDPOINTS ============
+export const cityAPI = {
+  // Obtener todas las ciudades activas
+  getAllCities: () => api.get('/api/cities'),
+  
+  // Obtener ciudades por país (si existe el endpoint)
+  getCitiesByCountry: (country) => api.get(`/api/cities/country/${country}`).catch(() => ({ data: [] })),
+  
+  // Obtener ciudad por ID
+  getCityById: (id) => api.get(`/api/cities/${id}`),
+  
+  // Buscar ciudades (si existe el endpoint)
+  searchCities: (query) => api.get('/api/cities/search', { params: { query } }).catch(() => ({ data: [] })),
+};
+
+// ============ SEAT ENDPOINTS ============
+export const seatAPI = {
+  // Obtener todos los asientos de un vuelo
+  getSeatsByFlight: (flightId) => api.get(`/api/seats/flight/${flightId}`),
+  
+  // Obtener asiento por ID
+  getSeatById: (id) => api.get(`/api/seats/${id}`),
+  
+  // Reservar un asiento (si existe el endpoint)
+  reserveSeat: (seatId) => api.put(`/api/seats/${seatId}/reserve`).catch(() => { 
+    throw new Error('Endpoint no disponible') 
+  }),
+  
+  // Liberar un asiento (si existe el endpoint)
+  releaseSeat: (seatId) => api.put(`/api/seats/${seatId}/release`).catch(() => { 
+    throw new Error('Endpoint no disponible') 
+  }),
+  
+  // Obtener asientos disponibles por vuelo
+  getAvailableSeats: (flightId) => api.get(`/api/seats/flight/${flightId}/available`),
+  
+  // Obtener asientos ocupados por vuelo (si existe el endpoint)
+  getOccupiedSeats: (flightId) => api.get(`/api/seats/flight/${flightId}/occupied`).catch(() => ({ data: [] })),
+};
+
+// ============ SEAT LOCK ENDPOINTS ============
+export const seatLockAPI = {
+  // Bloquear un asiento por 15 minutos
+  lockSeat: (seatId, userId) => api.post('/api/seat-locks/lock', { seatId, userId }),
+  
+  // Liberar el bloqueo de un asiento
+  releaseLock: (seatId) => api.delete(`/api/seat-locks/${seatId}`),
+  
+  // Verificar estado de bloqueo de un asiento
+  checkLockStatus: (seatId) => api.get(`/api/seat-locks/${seatId}/status`),
+  
+  // Obtener información general de bloqueos (si existe el endpoint)
+  getLockInfo: () => api.get('/api/seat-locks/info').catch(() => ({ data: {} })),
+  
+  // Obtener bloqueos del usuario actual (si existe el endpoint)
+  getUserLocks: () => api.get('/api/seat-locks/user').catch(() => ({ data: [] })),
+  
+  // Extender bloqueo (si existe el endpoint)
+  extendLock: (seatId) => api.post(`/api/seat-locks/${seatId}/extend`).catch(() => { 
+    throw new Error('Endpoint no disponible') 
+  }),
+};
+
+// ============ USER PROFILE ENDPOINTS ============
+export const userAPI = {
+  // Obtener perfil del usuario (si existe el endpoint)
+  getProfile: () => api.get('/api/user/profile').catch(() => ({ data: {} })),
+  
+  // Actualizar perfil (si existe el endpoint)
+  updateProfile: (data) => api.put('/api/user/profile', data).catch(() => { 
+    throw new Error('Endpoint no disponible') 
+  }),
+  
+  // Obtener historial de vuelos (si existe el endpoint)
+  getFlightHistory: () => api.get('/api/user/flight-history').catch(() => ({ data: [] })),
+  
+  // Obtener millas y puntos (si existe el endpoint)
+  getLoyaltyPoints: () => api.get('/api/user/loyalty-points').catch(() => ({ data: {} })),
+  
+  // Obtener preferencias (si existe el endpoint)
+  getPreferences: () => api.get('/api/user/preferences').catch(() => ({ data: {} })),
+  
+  // Actualizar preferencias (si existe el endpoint)
+  updatePreferences: (data) => api.put('/api/user/preferences', data).catch(() => { 
+    throw new Error('Endpoint no disponible') 
+  }),
+};
+
+// ============ PAYMENT ENDPOINTS ============
+export const paymentAPI = {
+  // Procesar pago (si existe el endpoint)
+  processPayment: (data) => api.post('/api/payments/process', data).catch(() => { 
+    throw new Error('Endpoint no disponible') 
+  }),
+  
+  // Confirmar pago (si existe el endpoint)
+  confirmPayment: (paymentId) => api.post(`/api/payments/${paymentId}/confirm`).catch(() => { 
+    throw new Error('Endpoint no disponible') 
+  }),
+  
+  // Obtener métodos de pago guardados (si existe el endpoint)
+  getPaymentMethods: () => api.get('/api/payments/methods').catch(() => ({ data: [] })),
+  
+  // Agregar método de pago (si existe el endpoint)
+  addPaymentMethod: (data) => api.post('/api/payments/methods', data).catch(() => { 
+    throw new Error('Endpoint no disponible') 
+  }),
+  
+  // Eliminar método de pago (si existe el endpoint)
+  removePaymentMethod: (id) => api.delete(`/api/payments/methods/${id}`).catch(() => { 
+    throw new Error('Endpoint no disponible') 
+  }),
+};
+
+// ============ DASHBOARD ENDPOINTS ============
+export const dashboardAPI = {
+  // Obtener estadísticas del dashboard (si existe el endpoint)
+  getDashboardStats: () => api.get('/api/dashboard/stats').catch(() => ({ data: {} })),
+  
+  // Obtener vuelos próximos (si existe el endpoint)
+  getUpcomingFlights: () => api.get('/api/dashboard/upcoming-flights').catch(() => ({ data: [] })),
+  
+  // Obtener ofertas especiales (si existe el endpoint)
+  getSpecialOffers: () => api.get('/api/dashboard/special-offers').catch(() => ({ data: [] })),
+  
+  // Obtener estado de aeropuertos (si existe el endpoint)
+  getAirportStatus: (airportCode) => api.get(`/api/dashboard/airport-status/${airportCode}`).catch(() => ({ data: {} })),
+};
 
 // ============ UTILITY FUNCTIONS ============
 export const apiUtils = {
