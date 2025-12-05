@@ -1,15 +1,8 @@
 // src/components/ProtectedRoute.jsx
+import React, { useEffect, useState } from 'react';
 import { useIsAuthenticated, useMsal } from '@azure/msal-react';
-import { useEffect, useState } from 'react';
+import Login from './Login';
 import './LoadingSpinner.css';
-
-export const redirectToHome = () => {
-  if (typeof window?.location?.assign === 'function') {
-    window.location.assign('/');
-  } else if (window?.location) {
-    window.location.href = '/';
-  }
-};
 
 const ProtectedRoute = ({ children }) => {
   const isAuthenticated = useIsAuthenticated();
@@ -39,7 +32,7 @@ const ProtectedRoute = ({ children }) => {
         console.log('🔒 ProtectedRoute: No autenticado, redirigiendo a home...');
         // Pequeño delay para mostrar mensaje
         setTimeout(() => {
-          redirectToHome();
+          window.location.href = '/';
         }, 1500);
       }
       
