@@ -8,24 +8,47 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # Usar Node 18 que es más estable con Rollup
+        node-version: [18.x]
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 20
+      - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ matrix.node-version }}
           cache: 'npm'
+          cache-dependency-path: package.json
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Clean install for Linux (Fix Rollup bug)
+        run: |
+          echo "🧹 Removiendo lockfile y node_modules..."
+          rm -rf node_modules package-lock.json
+          
+          echo "🔧 Configurando npm para Linux específicamente..."
+          npm config set platform linux
+          npm config set arch x64
+          
+          echo "📦 Instalando dependencias limpias..."
+          # Instalar primero rollup explícitamente para Linux
+          npm install rollup@4.52.4 --save-dev
+          npm install @rollup/rollup-linux-x64-gnu@4.52.4 --save-optional
+          
+          # Instalar el resto
+          npm ci --ignore-scripts
+          
+          echo "✅ Verificando instalación de Rollup..."
+          ls -la node_modules/.bin/rollup || echo "⚠️ Rollup bin no encontrado"
+          ls node_modules/@rollup/ || echo "⚠️ Carpeta @rollup no existe"
 
       - name: Create .env.production (Vite env)
         run: |
           echo "VITE_API_URL=https://d34hoxniq2n0jw.cloudfront.net" > .env.production
-
+          
           # Azure AD vars
           echo "VITE_AZURE_CLIENT_ID=0758e3c8-a43d-4957-a829-8d92f911ad31" >> .env.production
           echo "VITE_AZURE_API_CLIENT_ID=dce7b0a8-1f73-483e-a684-f5f3d8c2f713" >> .env.production
@@ -33,18 +56,50 @@ jobs:
           echo "VITE_AZURE_REDIRECT_URI=https://d34hoxniq2n0jw.cloudfront.net/" >> .env.production
           echo "VITE_AZURE_POST_LOGOUT_REDIRECT_URI=https://d34hoxniq2n0jw.cloudfront.net/" >> .env.production
           echo "VITE_AZURE_API_SCOPE=api://0758e3c8-a43d-4957-a829-8d92f911ad31/access_as_user" >> .env.production
-
+          
           echo "✅ Archivo .env.production creado"
+          cat .env.production
 
-      - name: Build (Vite)
+      - name: Build (Vite) with forced Linux env
         env:
-          # Esto hace que Vite SÍ cargue el archivo .env.production
           NODE_ENV: production
-        run: npm run build
+          # Variables críticas para Rollup en Linux
+          npm_config_platform: linux
+          npm_config_arch: x64
+          npm_config_libc: glibc
+        run: |
+          echo "🏗️ Iniciando build con Rollup para Linux..."
+          
+          # Verificar estructura
+          echo "=== Estructura de node_modules/@rollup ==="
+          find node_modules/@rollup -name "*.js" -o -name "*.node" | head -20
+          
+          echo "=== Versión de Rollup ==="
+          npx rollup --version || echo "⚠️ No se puede ejecutar rollup"
+          
+          echo "=== Ejecutando npm run build ==="
+          npm run build
+          
+          echo "📁 Verificando resultado del build:"
+          if [ -d "dist" ]; then
+            ls -la dist/
+            echo "✅ Build completado exitosamente"
+          else
+            echo "❌ ERROR: No se creó carpeta dist"
+            exit 1
+          fi
 
       - name: Show build output (debug)
         run: |
-          if [ -d "dist" ]; then ls -la dist; else ls -la build || true; fi
+          if [ -d "dist" ]; then 
+            echo "📦 Contenido de dist/:"
+            ls -la dist/
+            echo "📄 index.html:"
+            head -20 dist/index.html
+          else
+            echo "❌ No se encontró carpeta dist"
+            exit 1
+          fi
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -60,13 +115,20 @@ jobs:
 
       - name: Sync build to S3
         run: |
-          if [ -d "dist" ]; then BUILD_DIR="dist"; else BUILD_DIR="build"; fi
-          aws s3 sync "$BUILD_DIR/" s3://f4u-frontend-demo --delete
-          echo "📤 Archivos desplegados en S3"
+          BUILD_DIR="dist"
+          if [ ! -d "$BUILD_DIR" ]; then
+            echo "❌ ERROR: No se encontró carpeta $BUILD_DIR"
+            exit 1
+          fi
+          
+          echo "📤 Sincronizando $BUILD_DIR/ a S3..."
+          aws s3 sync "$BUILD_DIR/" s3://f4u-frontend-demo --delete --size-only
+          echo "✅ Archivos desplegados en S3"
 
       - name: Configure S3 website + policy
         run: |
           aws s3 website s3://f4u-frontend-demo --index-document index.html --error-document index.html || true
+          
           echo '{
             "Version":"2012-10-17",
             "Statement":[
@@ -79,17 +141,27 @@ jobs:
               }
             ]
           }' > /tmp/f4u_policy.json
+          
           aws s3api put-bucket-policy --bucket f4u-frontend-demo --policy file:///tmp/f4u_policy.json || true
           echo "🔓 Política pública aplicada"
 
       - name: Invalidate CloudFront cache
         run: |
+          DISTRIBUTION_ID="${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}"
+          if [ -z "$DISTRIBUTION_ID" ]; then
+            echo "⚠️ No se encontró CLOUDFRONT_DISTRIBUTION_ID en secrets"
+            exit 0
+          fi
+          
           aws cloudfront create-invalidation \
-            --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --distribution-id "$DISTRIBUTION_ID" \
             --paths "/*"
           echo "🌀 CloudFront invalidado"
 
       - name: Finish
         run: |
-          echo "🎉 DEPLOY COMPLETADO"
-          echo "🌐 https://d34hoxniq2n0jw.cloudfront.net"
+          echo "🎉 DEPLOY COMPLETADO EXITOSAMENTE"
+          echo "🌐 URL de producción: https://d34hoxniq2n0jw.cloudfront.net"
+          echo "📅 Fecha: $(date)"
+          echo "🔄 Node.js: $(node --version)"
+          echo "📦 npm: $(npm --version)"
