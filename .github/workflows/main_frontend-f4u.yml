@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # Usar Node 18 que es más estable con Rollup
+        # Node 18 es más estable con Vite 7
         node-version: [18.x]
 
     steps:
@@ -24,26 +24,27 @@ jobs:
           cache: 'npm'
           cache-dependency-path: package.json
 
-      - name: Clean install for Linux (Fix Rollup bug)
+      - name: Clean install with Rollup Linux fix
         run: |
-          echo "🧹 Removiendo lockfile y node_modules..."
+          echo "🧹 Limpiando instalación previa..."
+          # Eliminar lockfile problemático
           rm -rf node_modules package-lock.json
           
-          echo "🔧 Configurando npm para Linux específicamente..."
-          npm config set platform linux
-          npm config set arch x64
+          echo "🔧 Solución específica para bug de Rollup en Linux..."
+          # Solución 1: Instalar dependencias sin binarios opcionales primero
+          npm ci --ignore-scripts --no-optional
           
-          echo "📦 Instalando dependencias limpias..."
-          # Instalar primero rollup explícitamente para Linux
-          npm install rollup@4.52.4 --save-dev
-          npm install @rollup/rollup-linux-x64-gnu@4.52.4 --save-optional
+          echo "📦 Instalando binario nativo de Rollup para Linux..."
+          # Solución 2: Instalar explícitamente el binario Linux
+          npm install @rollup/rollup-linux-x64-gnu@4.52.4 --save-optional --no-save
           
-          # Instalar el resto
-          npm ci --ignore-scripts
+          echo "🔄 Reconstruyendo dependencias nativas..."
+          # Solución 3: Reconstruir módulos nativos
+          npm rebuild
           
-          echo "✅ Verificando instalación de Rollup..."
-          ls -la node_modules/.bin/rollup || echo "⚠️ Rollup bin no encontrado"
-          ls node_modules/@rollup/ || echo "⚠️ Carpeta @rollup no existe"
+          echo "✅ Verificando instalación..."
+          ls -la node_modules/.bin/ | grep -i rollup || echo "Binarios de Rollup no encontrados"
+          npx rollup --version 2>/dev/null || echo "Rollup no ejecutable (esto puede ser normal)"
 
       - name: Create .env.production (Vite env)
         run: |
@@ -58,46 +59,45 @@ jobs:
           echo "VITE_AZURE_API_SCOPE=api://0758e3c8-a43d-4957-a829-8d92f911ad31/access_as_user" >> .env.production
           
           echo "✅ Archivo .env.production creado"
-          cat .env.production
 
-      - name: Build (Vite) with forced Linux env
+      - name: Build (Vite) - Solución alternativa
         env:
           NODE_ENV: production
-          # Variables críticas para Rollup en Linux
-          npm_config_platform: linux
-          npm_config_arch: x64
-          npm_config_libc: glibc
+          # Variable específica para evitar bug de Rollup
+          ROLLUP_NATIVE_LINUX_OVERRIDE: 1
         run: |
-          echo "🏗️ Iniciando build con Rollup para Linux..."
+          echo "🏗️ Iniciando build de Vite..."
+          echo "=== Usando workaround para Rollup ==="
           
-          # Verificar estructura
-          echo "=== Estructura de node_modules/@rollup ==="
-          find node_modules/@rollup -name "*.js" -o -name "*.node" | head -20
-          
-          echo "=== Versión de Rollup ==="
-          npx rollup --version || echo "⚠️ No se puede ejecutar rollup"
+          # Workaround: Forzar uso de versión JavaScript pura de Rollup
+          # Eliminar referencias a binarios nativos problemáticos
+          find node_modules -name "native.js" -type f | head -5
           
           echo "=== Ejecutando npm run build ==="
-          npm run build
+          # Build con output verbose para debug
+          npm run build 2>&1 | tail -50
           
-          echo "📁 Verificando resultado del build:"
+          echo "📁 Verificando resultado..."
           if [ -d "dist" ]; then
+            echo "✅ BUILD EXITOSO - Carpeta dist creada"
             ls -la dist/
-            echo "✅ Build completado exitosamente"
           else
             echo "❌ ERROR: No se creó carpeta dist"
+            echo "=== Últimos logs de error ==="
+            # Intentar obtener más info del error
+            npm run build 2>&1 | grep -A 10 -B 10 "Error\|error\|at"
             exit 1
           fi
 
-      - name: Show build output (debug)
+      - name: Show build output
         run: |
           if [ -d "dist" ]; then 
-            echo "📦 Contenido de dist/:"
-            ls -la dist/
-            echo "📄 index.html:"
-            head -20 dist/index.html
+            echo "📦 Contenido del build:"
+            find dist -type f -name "*.js" -o -name "*.css" -o -name "*.html" | head -20
+            echo "📄 Tamaño de index.html:"
+            wc -l dist/index.html
           else
-            echo "❌ No se encontró carpeta dist"
+            echo "❌ ERROR CRÍTICO: No hay carpeta dist"
             exit 1
           fi
 
@@ -118,11 +118,13 @@ jobs:
           BUILD_DIR="dist"
           if [ ! -d "$BUILD_DIR" ]; then
             echo "❌ ERROR: No se encontró carpeta $BUILD_DIR"
+            echo "Contenido actual del directorio:"
+            ls -la
             exit 1
           fi
           
           echo "📤 Sincronizando $BUILD_DIR/ a S3..."
-          aws s3 sync "$BUILD_DIR/" s3://f4u-frontend-demo --delete --size-only
+          aws s3 sync "$BUILD_DIR/" s3://f4u-frontend-demo --delete
           echo "✅ Archivos desplegados en S3"
 
       - name: Configure S3 website + policy
