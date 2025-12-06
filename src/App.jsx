@@ -105,7 +105,7 @@ export default function App() {
     return coordsMap[cityName] || null;
   }
 
-  /* Validación simple - solo verifica que estén llenos los campos básicos */
+  /* Validación simple - solo verifihhca que estén llenos los campos básicos */
   const firstCompleted = Boolean(
     originCity &&
     destCity &&
